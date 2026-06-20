@@ -1,7 +1,23 @@
-from app.storage import load_notes
-from app.notes import create_note, display_notes, delete_note, display_notes_names, search_notes, get_max_id, add_id, get_date, get_tags
-from app.interface import clear_screen, print_error, print_success, print_warning, mk_prompt, mk_warning
 from datetime import datetime
+
+from app.interface import (
+    clear_screen,
+    mk_prompt,
+    print_error,
+    print_warning,
+)
+from app.notes import (
+    add_id,
+    create_note,
+    delete_note,
+    display_notes,
+    display_notes_names,
+    get_date,
+    get_max_id,
+    get_tags,
+    search_notes,
+)
+from app.storage import load_notes
 
 
 def main():
@@ -10,19 +26,18 @@ def main():
     if notes_with_no_id:
         max_id = add_id(notes, max_id)
 
-
     while True:
-
         clear_screen()
 
         print(
-"""
+            """
 1. Create Note
 2. Show Notes
 3. Delete Note
 4. Search Notes
 5. Exit
-""")
+"""
+        )
         mode = input(mk_prompt("Choose an action: "))
         print()
 
@@ -49,7 +64,11 @@ def main():
                 result = display_notes_names(notes)
                 print(result)
                 try:
-                    number_of_deleting_note = int(input("Print number of the note you want to delete (0 to exit): "))
+                    number_of_deleting_note = int(
+                        input(
+                            "Print number of the note you want to delete (0 to exit): "
+                        )
+                    )
                     print()
                     if number_of_deleting_note > 0:
                         res = delete_note(notes, number_of_deleting_note)
@@ -64,7 +83,9 @@ def main():
                 print_warning("No notes yet")
 
         elif mode == "4":
-            search = input(mk_prompt("Search by name (start with @ to enable tag search): "))
+            search = input(
+                mk_prompt("Search by name (start with @ to enable tag search): ")
+            )
             print()
             found_notes = search_notes(notes, search)
             if found_notes:
