@@ -1,4 +1,7 @@
 from dataclasses import dataclass
+from app.constants import TAG_PREFIXES, TAG_SEPARATORS
+from datetime import datetime
+
 
 @dataclass
 class Note:
@@ -7,10 +10,10 @@ class Note:
     tags: list[str]
     id: int = None
 
-def get_tags(text):
-    sims = ["@", "#"]
+
+def get_tags(text: str) -> list[str]:
     tags = []
-    for s in sims:
+    for s in TAG_PREFIXES:
         if s in text:
             current_text = text
             while s in current_text:
@@ -20,7 +23,7 @@ def get_tags(text):
                 else:
                     current_text = current_text[index_of_s + 1 :]
                     min_word = None
-                    for i in sims + [" ", "\n", "\t"]:
+                    for i in TAG_PREFIXES + TAG_SEPARATORS:
                         word = current_text.split(i).pop(0)
                         if min_word:
                             if len(word) < len(min_word):
@@ -35,5 +38,5 @@ def get_tags(text):
     return tags
 
 
-def get_date(dt):
+def get_date(dt: datetime) -> str:
     return f"{dt.day:02d}-{dt.month:02d}-{dt.year}"

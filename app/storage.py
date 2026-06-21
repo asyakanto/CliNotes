@@ -1,18 +1,27 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.notes import Note
+
 from json import dump, load, JSONDecodeError
-from os import path
+from pathlib import Path
+
 
 class Storage:
-    def __init__(self):
-        self.JSON_PATH = path.join(path.dirname(path.dirname(__file__)), "notes.json")
-    
-    def load(self):
+    JSON_PATH: Path
+
+    def __init__(self) -> None:
+        self.JSON_PATH = Path(__file__).parent.parent / "notes.json"
+
+    def load(self) -> list[dict]:
         try:
             with open(self.JSON_PATH) as file:
                 return load(file)
         except (FileNotFoundError, JSONDecodeError):
             return []
 
-    def save (self, notes):
+    def save(self, notes: list[Note]) -> None:
         from dataclasses import asdict
 
         lib = []

@@ -10,17 +10,14 @@ from app.interface import (
     mk_prompt,
     mk_muted,
 )
-from app.notes import (
-    get_tags,
-    get_date
-)
+from app.notes import get_tags, get_date
 from app.app import NotesApp
 
 
-def main():
+def main() -> None:
 
     app = NotesApp()
-    
+
     while True:
         clear_screen()
 

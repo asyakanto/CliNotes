@@ -1,46 +1,53 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.notes import Note
+
 from os import name, system
+from app.constants import RED, GREEN, YELLOW, CYAN, DIM, RESET, SEPARATOR_WIDTH
 
 
-def clear_screen():
+def clear_screen() -> None:
     if name == "nt":
         system("cls")
     else:
         system("clear")
 
 
-def display_notes(notes):
+def display_notes(notes: list[Note]) -> str:
     result = ""
     for note in notes:
         result += f"#{note.id} {note.title}" + "\n"
         result += (note.text if note.text else "-") + "\n"
         tags_str = ", ".join(note.tags)
         result += "@: " + mk_muted(tags_str) + "\n" if note.tags else ""
-        result += f"{'=' * 40}" + "\n\n"
+        result += f"{'=' * SEPARATOR_WIDTH}" + "\n\n"
     return result
 
 
-def display_notes_names(notes):
+def display_notes_names(notes: list[Note]) -> str:
     result = ""
     for note in notes:
         result += f"#{note.id} {note.title}" + "\n"
     return result
 
 
-def mk_error(text):
-    return "\033[31m" + text + "\033[0m"
+def mk_error(text: str) -> str:
+    return RED + text + RESET
 
 
-def mk_success(text):
-    return "\033[32m" + text + "\033[0m"
+def mk_success(text: str) -> str:
+    return GREEN + text + RESET
 
 
-def mk_warning(text):
-    return "\033[33m" + text + "\033[0m"
+def mk_warning(text: str) -> str:
+    return YELLOW + text + RESET
 
 
-def mk_prompt(text):
-    return "\033[36m" + text + "\033[0m"
+def mk_prompt(text: str) -> str:
+    return CYAN + text + RESET
 
 
-def mk_muted(text):
-    return "\033[2m" + text + "\033[0m"
+def mk_muted(text: str) -> str:
+    return DIM + text + RESET
