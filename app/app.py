@@ -81,3 +81,24 @@ class NotesApp:
                         found_notes.append(note)
                         break
         return found_notes
+
+    def get_note(self, id: int) -> Note | None:
+        for note in self.notes:
+            if id == note.id:
+                return note
+        return None
+
+    def edit_note(self, id: int, title: str, text: str, tags: list[str]) -> Note | None:
+        note = self.get_note(id)
+        if note is None:
+            logging.warning("Editing a non-existent note")
+            return None
+        if title.strip():
+            note.title = title.strip()
+        if text.strip():
+            note.text = text.strip()
+        if tags:
+            note.tags = tags
+        self.storage.save(self.notes)
+        logging.info(f"Note edited: #{note.id}: {note.title}")
+        return note

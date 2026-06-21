@@ -1,4 +1,5 @@
 from datetime import datetime
+from prompt_toolkit import prompt
 
 from app.interface import (
     clear_screen,
@@ -36,9 +37,10 @@ def main() -> None:
             """
 1. Create Note
 2. Show Notes
-3. Delete Note
-4. Search Notes
-5. Exit
+3. Edit Note
+4. Delete Note
+5. Search Notes
+6. Exit
 """
         )
 
@@ -72,6 +74,66 @@ def main() -> None:
                 result = display_notes_names(app.notes)
                 print(result)
                 try:
+                    id_of_editing_note = int(
+                        input(
+                            mk_prompt(
+                                "Print ID of the note you want to edit (-1 to exit): "
+                            )
+                        )
+                    )
+                    print()
+                    if id_of_editing_note >= 0:
+                        note = app.get_note(id_of_editing_note)
+                        if note is not None:
+                            title = note.title
+                            text = note.text
+                            tags = note.tags
+                            while True:
+                                clear_screen()
+
+                                editing_mode = input(
+                                    mk_prompt(
+                                        f"""
+1. Title: \"{title}\"
+2. Text: \"{text}\"
+3. Tags: {tags}
+4. Save and exit
+
+Choose editing mode: """
+                                    )
+                                )
+                                if editing_mode == "1":
+                                    new_title = prompt("New title: ", default=title)
+                                    if new_title.strip():
+                                        title = new_title
+                                elif editing_mode == "2":
+                                    new_text = prompt("New text: ", default=text)
+                                    if new_text.strip():
+                                        text = new_text
+                                elif editing_mode == "3":
+                                    pass
+                                elif editing_mode == "4":
+                                    app.edit_note(id_of_editing_note, title, text, tags)
+                                    break
+                                else:
+                                    print(mk_error("Wrong action"))
+
+                                input(mk_muted("\nPress Enter to continue..."))
+                        else:
+                            print(mk_error("There's no note with such ID"))
+                    else:
+                        continue
+
+                except ValueError:
+                    print(mk_error("That's not a number"))
+            else:
+                print(mk_warning("No notes yet"))
+
+        elif mode == "4":
+            if app.notes:
+                result = display_notes_names(app.notes)
+                print(result)
+                try:
                     id_of_deleting_note = int(
                         input(
                             mk_prompt(
@@ -94,10 +156,8 @@ def main() -> None:
                         continue
                 except ValueError:
                     print(mk_error("That's not a number"))
-            else:
-                print(mk_warning("No notes yet"))
 
-        elif mode == "4":
+        elif mode == "5":
             search = input(
                 mk_prompt("Search by name (start with @ to enable tag search): ")
             )
@@ -109,8 +169,9 @@ def main() -> None:
             else:
                 print(mk_warning("Nothing found"))
 
-        elif mode == "5":
+        elif mode == "6":
             logging.info("Application closed")
+            clear_screen()
             break
 
         else:
