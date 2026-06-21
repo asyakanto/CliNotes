@@ -11,21 +11,16 @@ from app.interface import (
     mk_muted,
 )
 from app.notes import (
-    get_max_id,
     get_tags,
-    get_date,
-    create_note,
-    delete_note,
-    search_notes,
+    get_date
 )
-from app.storage import load_notes
+from app.app import NotesApp
 
 
 def main():
 
-    notes = load_notes()
-    max_id = get_max_id(notes)
-
+    app = NotesApp()
+    
     while True:
         clear_screen()
 
@@ -48,9 +43,8 @@ def main():
             tags = get_tags(text)
             date = get_date(datetime.now())
             tags.insert(0, date)
-            max_id = get_max_id(notes) + 1
 
-            result = create_note(notes, title, text, tags, max_id)
+            result = app.create_note(title, text, tags)
 
             print()
             if result is None:
@@ -59,15 +53,15 @@ def main():
                 print(mk_success(f"Note #{result.id} {result.title} created"))
 
         elif mode == "2":
-            if notes:
-                result = display_notes(notes)
+            if app.notes:
+                result = display_notes(app.notes)
                 print(result, end="")
             else:
                 print(mk_warning("No notes yet"))
 
         elif mode == "3":
-            if notes:
-                result = display_notes_names(notes)
+            if app.notes:
+                result = display_notes_names(app.notes)
                 print(result)
                 try:
                     id_of_deleting_note = int(
@@ -79,7 +73,7 @@ def main():
                     )
                     print()
                     if id_of_deleting_note >= 0:
-                        is_deleted = delete_note(notes, id_of_deleting_note)
+                        is_deleted = app.delete_note(id_of_deleting_note)
                         if is_deleted:
                             print(
                                 mk_success(
@@ -100,7 +94,7 @@ def main():
                 mk_prompt("Search by name (start with @ to enable tag search): ")
             )
             print()
-            found_notes = search_notes(notes, search)
+            found_notes = app.search_notes(search)
             if found_notes:
                 result = display_notes(found_notes)
                 print(result, end="")
