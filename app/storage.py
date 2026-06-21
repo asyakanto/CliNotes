@@ -6,6 +6,7 @@ if TYPE_CHECKING:
 
 from json import dump, load, JSONDecodeError
 from pathlib import Path
+import logging
 
 
 class Storage:
@@ -16,9 +17,15 @@ class Storage:
 
     def load(self) -> list[dict]:
         try:
-            with open(self.JSON_PATH) as file:
-                return load(file)
-        except (FileNotFoundError, JSONDecodeError):
+            with open(self.JSON_PATH, encoding="utf-8") as file:
+                notes = load(file)
+                logging.info(f"Loaded {len(notes)} notes")
+                return notes
+        except FileNotFoundError:
+            logging.warning("Notes file not found, creating new")
+            return []
+        except JSONDecodeError:
+            logging.error("JSON corrupted, starting fresh")
             return []
 
     def save(self, notes: list[Note]) -> None:
@@ -27,5 +34,6 @@ class Storage:
         lib = []
         for note in notes:
             lib.append(asdict(note))
-        with open(self.JSON_PATH, "w") as file:
-            dump(lib, file)
+        with open(self.JSON_PATH, "w", encoding="utf-8") as file:
+            dump(lib, file, ensure_ascii=False, indent=2)
+            logging.info(f"Saved {len(notes)} notes")

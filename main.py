@@ -13,10 +13,21 @@ from app.interface import (
 from app.notes import get_tags, get_date
 from app.app import NotesApp
 
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.FileHandler("app.log"),
+    ],
+)
+
 
 def main() -> None:
 
     app = NotesApp()
+    logging.info("Application started")
 
     while True:
         clear_screen()
@@ -99,6 +110,7 @@ def main() -> None:
                 print(mk_warning("Nothing found"))
 
         elif mode == "5":
+            logging.info("Application closed")
             break
 
         else:

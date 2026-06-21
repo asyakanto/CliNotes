@@ -1,6 +1,7 @@
 from app.notes import Note
 from app.storage import Storage
 from app.constants import NO_NOTES_MAX_ID
+import logging
 
 
 class NotesApp:
@@ -24,13 +25,17 @@ class NotesApp:
     def _valid_notes_id(self) -> list[Note]:
         self.max_id = int(self._calculate_max_id())
         ids = set()
+        duplicates_found = 0
         for note in self.notes:
             if note.id is None or note.id < 0 or note.id in ids or "." in str(note.id):
                 self.max_id += 1
                 note.id = self.max_id
+                duplicates_found += 1
             else:
                 ids.add(note.id)
-        self.storage.save(self.notes)
+        if duplicates_found:
+            logging.warning(f"Fixed {duplicates_found} invalid ID")
+            self.storage.save(self.notes)
         return self.notes
 
     def _dictionary_to_object(self) -> list[Note]:
@@ -43,6 +48,7 @@ class NotesApp:
         self.max_id += 1
         note = Note(id=self.max_id, title=title, text=text, tags=tags)
         self.notes.append(note)
+        logging.info(f"Note created: #{note.id}: {note.title}")
         self.storage.save(self.notes)
         return note
 
@@ -50,6 +56,7 @@ class NotesApp:
         for i, note in enumerate(self.notes):
             if id == note.id:
                 self.notes.pop(i)
+                logging.info(f"Note deleted: #{note.id}: {note.title}")
                 self.storage.save(self.notes)
                 return True
         return False
