@@ -1,23 +1,23 @@
 from dataclasses import dataclass
-from app.constants import TAG_PREFIXES, TAG_SEPARATORS
 from datetime import datetime
+from app.constants import TAG_PREFIXES, TAG_SEPARATORS
 
 
 @dataclass
 class Note:
-    """Signle note, that contains all it's information"""
-
     title: str
     text: str
     tags: list[str]
     id: int = None
+    archieved: bool = False
+    deleted_at: str = "0"
+
+
+def get_date(dt: datetime) -> str:
+    return f"{dt.day:02d}-{dt.month:02d}-{dt.year}"
 
 
 def get_tags(text: str) -> list[str]:
-    """
-    Get the text of the note and return tags (words that start with '@' or '#')
-    \@ and \# are ignored. Tag ends with space, newline or other tag symbol
-    """
     tags = []
     for s in TAG_PREFIXES:
         if s in text:
@@ -42,7 +42,3 @@ def get_tags(text: str) -> list[str]:
         else:
             continue
     return tags
-
-
-def get_date(dt: datetime) -> str:
-    return f"{dt.day:02d}-{dt.month:02d}-{dt.year}"

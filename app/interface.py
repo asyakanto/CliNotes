@@ -1,11 +1,14 @@
 from __future__ import annotations
+from app.constants import RESET, RED, CYAN, DIM, SEPARATOR_WIDTH
 from typing import TYPE_CHECKING
+from os import name, system
+from prompt_toolkit import prompt
+from app.notes import get_tags
+
 
 if TYPE_CHECKING:
     from app.notes import Note
-
-from os import name, system
-from app.constants import RED, GREEN, YELLOW, CYAN, DIM, RESET, SEPARATOR_WIDTH
+    from app.app import NoteApp
 
 
 def clear_screen() -> None:
@@ -15,39 +18,89 @@ def clear_screen() -> None:
         system("clear")
 
 
-def display_notes(notes: list[Note]) -> str:
-    result = ""
-    for note in notes:
-        result += f"#{note.id} {note.title}" + "\n"
-        result += (note.text if note.text else "-") + "\n"
-        tags_str = ", ".join(note.tags)
-        result += "@: " + mk_muted(tags_str) + "\n" if note.tags else ""
-        result += f"{'=' * SEPARATOR_WIDTH}" + "\n\n"
-    return result
-
-
-def display_notes_names(notes: list[Note]) -> str:
-    result = ""
-    for note in notes:
-        result += f"#{note.id} {note.title}" + "\n"
-    return result
-
-
-def mk_error(text: str) -> str:
-    return RED + text + RESET
-
-
-def mk_success(text: str) -> str:
-    return GREEN + text + RESET
-
-
-def mk_warning(text: str) -> str:
-    return YELLOW + text + RESET
-
-
-def mk_prompt(text: str) -> str:
+def make_cyan(text: str) -> str:
     return CYAN + text + RESET
 
 
-def mk_muted(text: str) -> str:
+def make_muted(text: str) -> str:
     return DIM + text + RESET
+
+
+def make_red(text: str) -> str:
+    return RED + text + RESET
+
+
+def display_notes(notes: list[Note], display_archieve=False) -> str:
+    result = ""
+    for note in notes:
+        if not note.archieved:
+            result += f"#{note.id} {note.title}" + "\n"
+        elif display_archieve:
+            result += make_muted(f"#{note.id} {note.title}") + "\n"
+    return result
+
+
+def show_note(app: NoteApp, note: Note) -> None:
+    clear_screen()
+    print(
+        "=" * SEPARATOR_WIDTH
+        + " "
+        + make_cyan(note.title)
+        + " "
+        + "=" * SEPARATOR_WIDTH
+    )
+    if note.archieved:
+        print(make_red("ARCHIEVED"))
+    print(make_red(str(note.id)) + " #: " + make_muted(", ".join(note.tags)))
+    print()
+    print(note.text)
+    print()
+
+
+def interface(app: NoteApp, note: Note):
+    if not note.archieved:
+        while True:
+            show_note(app, note)
+            print(
+                make_cyan("Choose action: q - quit; a - archieve note; e - edit note")
+            )
+            mode = input("> ").strip().lower()
+            if mode == "q":
+                break
+            elif mode == "a":
+                app.archieve_note(note)
+                interface(app, note)
+                break
+            elif mode == "e":
+                print(make_cyan("Edit: t - title, i - text"))
+                mode = input("> ").strip().lower()
+                if mode == "t":
+                    new_title = prompt("New title: ", default=note.title).strip()
+                    if new_title:
+                        note.title = new_title
+                if mode == "i":
+                    new_text = prompt("New text: ", default=note.text).strip()
+                    if new_text:
+                        tags = get_tags(new_text)
+                        tags.insert(0, note.tags[0])
+                        note.tags = tags
+                        note.text = new_text
+                    else:
+                        note.text = "-"
+    else:
+        while True:
+            show_note(app, note)
+            print(
+                make_cyan("Choose action: q - quit; r - restore note; d - delete note")
+            )
+            mode = input("> ").strip().lower()
+            if mode == "q":
+                break
+            elif mode == "r":
+                note.archieved = False
+                note.archieved_at = "0"
+                interface(app, note)
+                break
+            elif mode == "d":
+                app.delete_note(note)
+                break

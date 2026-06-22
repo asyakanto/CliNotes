@@ -1,23 +1,30 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from app.notes import Note
-
 from json import dump, load, JSONDecodeError
+from typing import TYPE_CHECKING
 from pathlib import Path
 import logging
 
 
-class Storage:
-    """Class contains path to JSON to save note between sessions.
-    Saves notes to json file and parse it to load notes at the start
-    """
+if TYPE_CHECKING:
+    from app.notes import Note
 
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.FileHandler("app.log"),
+    ],
+)
+
+
+class Storage:
     JSON_PATH: Path
+    SETTINGS_PATH: Path
 
     def __init__(self) -> None:
         self.JSON_PATH = Path(__file__).parent.parent / "notes.json"
+        self.SETTINGS_PATH = Path(__file__).parent.parent / "settings.json"
 
     def load(self) -> list[dict]:
         try:
@@ -41,3 +48,21 @@ class Storage:
         with open(self.JSON_PATH, "w", encoding="utf-8") as file:
             dump(lib, file, ensure_ascii=False, indent=2)
             logging.info(f"Saved {len(notes)} notes")
+
+    def load_settings(self) -> dict:
+        try:
+            with open(self.SETTINGS_PATH, encoding="utf-8") as file:
+                setting = load(file)
+                logging.info("Settings loaded")
+                return setting
+        except FileNotFoundError:
+            logging.warning("Notes file not found, creating new")
+            return {}
+        except JSONDecodeError:
+            logging.error("JSON corrupted, starting fresh")
+            return {}
+
+    def save_settings(self, settings: dict) -> None:
+        with open(self.SETTINGS_PATH, "w", encoding="utf-8") as file:
+            dump(settings, file, ensure_ascii=False, indent=2)
+            logging.info("Settings updated")
