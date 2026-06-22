@@ -5,6 +5,8 @@ import logging
 
 
 class NotesApp:
+    """Manages the colliction of notes: Create, Read, Update, Delete"""
+
     notes: list[Note]
     max_id: int
 
@@ -23,6 +25,9 @@ class NotesApp:
         return max_id
 
     def _valid_notes_id(self) -> list[Note]:
+        """
+        Fix duplicate, negative, float, and missing IDs
+        """
         self.max_id = int(self._calculate_max_id())
         ids = set()
         duplicates_found = 0
@@ -62,12 +67,17 @@ class NotesApp:
         return False
 
     def search_notes(self, search: str) -> list[Note]:
+        """
+        Serch note by title (can be just a part of title) or by tags if search starts with @ or #
+        Return notes matching the search
+        """
+
         if not search:
             return self.notes
         search = search.lower()
         found_notes = []
         search_by = "title"
-        if search[0] == "@":
+        if search[0] == "@" or search == "#":
             search = search[1:]
             search_by = "tags"
         if search_by == "title":
@@ -89,6 +99,11 @@ class NotesApp:
         return None
 
     def edit_note(self, id: int, title: str, text: str, tags: list[str]) -> Note | None:
+        """
+        Changes notes parameters to new by the note id
+        Update note fields by ID. Only non-empty values are applied
+        """
+
         note = self.get_note(id)
         if note is None:
             logging.warning("Editing a non-existent note")

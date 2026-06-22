@@ -5,6 +5,8 @@ from datetime import datetime
 
 @dataclass
 class Note:
+    """Signle note, that contains all it's information"""
+
     title: str
     text: str
     tags: list[str]
@@ -12,6 +14,10 @@ class Note:
 
 
 def get_tags(text: str) -> list[str]:
+    """
+    Get the text of the note and return tags (words that start with '@' or '#')
+    \@ and \# are ignored. Tag ends with space, newline or other tag symbol
+    """
     tags = []
     for s in TAG_PREFIXES:
         if s in text:

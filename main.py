@@ -111,7 +111,15 @@ Choose editing mode: """
                                     if new_text.strip():
                                         text = new_text
                                 elif editing_mode == "3":
-                                    pass
+                                    tags_string = ", ".join(tags)
+                                    new_tags = prompt(
+                                        "New tags: ", default=tags_string
+                                    ).strip()
+                                    tags = [
+                                        t.strip().lower()
+                                        for t in new_tags.split(",")
+                                        if t.strip()
+                                    ]
                                 elif editing_mode == "4":
                                     app.edit_note(id_of_editing_note, title, text, tags)
                                     break

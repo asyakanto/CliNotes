@@ -10,6 +10,10 @@ import logging
 
 
 class Storage:
+    """Class contains path to JSON to save note between sessions.
+    Saves notes to json file and parse it to load notes at the start
+    """
+
     JSON_PATH: Path
 
     def __init__(self) -> None:
