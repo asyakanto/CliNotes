@@ -20,8 +20,8 @@ class NotesApp:
     def __init__(self) -> None:
         self.storage = Storage()
 
-        self.notes = self.storage.load()
-        self.notes = self._dictionary_to_object()
+        raw_notes = self.storage.load()
+        self.notes = [Note(**n) for n in raw_notes]
 
         self.max_id = self._calculate_max_id()
 
@@ -29,9 +29,6 @@ class NotesApp:
         self.notes = self._delete_archived_notes()
 
         self.settings = self.storage.load_settings()
-
-    def _dictionary_to_object(self) -> list[Note]:
-        return [Note(**note) for note in self.notes]
 
     def _calculate_max_id(self) -> int:
         max_id = NO_NOTES_MAX_ID

@@ -9,7 +9,7 @@ class Note:
     text: str
     tags: list[str]
     created: str
-    id: int = None
+    id: int | None = None
     archived: bool = False
     archived_at: str = DEFAULT_ARCHIVED_AT
 
@@ -29,7 +29,7 @@ def get_tags(text: str) -> list[str]:
                     current_text = current_text[index_of_s + 2 :]
                 else:
                     current_text = current_text[index_of_s + 1 :]
-                    min_word = None
+                    min_word = ""
                     for i in TAG_PREFIXES + TAG_SEPARATORS:
                         word = current_text.split(i).pop(0)
                         if min_word:

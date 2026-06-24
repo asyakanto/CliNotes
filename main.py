@@ -16,9 +16,9 @@ from app.constants import (
     ACTION_CHANGE_TITLE,
     ACTION_ARCHIVE,
     ACTION_QUIT,
-    LOG_FILE,
+    FILE_LOG,
 )
-from sys import sys
+import sys
 
 
 def main() -> None:
@@ -27,7 +27,7 @@ def main() -> None:
             level=logging.INFO,
             format="%(asctime)s [%(levelname)s] %(message)s",
             handlers=[
-                logging.FileHandler(LOG_FILE),
+                logging.FileHandler(FILE_LOG),
             ],
         )
     except OSError:
