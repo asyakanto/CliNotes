@@ -1,6 +1,12 @@
 from app.notes import Note, get_date, get_tags
 from app.storage import Storage
-from app.constants import NO_NOTES_MAX_ID
+from app.constants import (
+    NO_NOTES_MAX_ID,
+    DEFAULT_ARCHIVED_AT,
+    DEFAULT_TEXT,
+    DATE_FORMAT,
+    AUTO_DELETE_DAYS,
+)
 import logging
 from datetime import datetime
 
@@ -52,26 +58,25 @@ class NotesApp:
         current_date = datetime.now()
         to_delete = []
         for note in self.notes:
-            if (
-                note.archived
-                and (
-                    current_date - datetime.strptime(note.archived_at, "%d-%m-%Y")
-                ).days
-                > 30
-            ):
-                to_delete.append(note)
+            if note.archived_at != DEFAULT_ARCHIVED_AT and note.archived:
+                try:
+                    if (
+                        current_date - datetime.strptime(note.archived_at, DATE_FORMAT)
+                    ).days > AUTO_DELETE_DAYS:
+                        to_delete.append(note)
+                except ValueError:
+                    continue
         for note in to_delete:
             self.delete_note(note)
         return self.notes
 
-    def create_note(
-        self, title: str, text: str, tags: list[str], created: str
-    ) -> Note | None:
-        if not title.strip():
-            return None
+    def create_note(self, title: str, text: str) -> Note:
         if not text.strip():
-            text = "-"
+            text = DEFAULT_TEXT
         self.max_id += 1
+        tags = get_tags(text)
+        created = get_date(datetime.now())
+        tags.insert(0, created)
         note = Note(id=self.max_id, title=title, text=text, tags=tags, created=created)
         self.notes.append(note)
         logging.info(f"Note created: #{note.id}: {note.title}")
@@ -109,13 +114,13 @@ class NotesApp:
                 note.tags = tags
                 note.text = new_text
             else:
-                note.text = "-"
+                note.text = DEFAULT_TEXT
                 note.tags = [note.created]
         self.storage.save(self.notes)
         return note
 
     def restore_note(self, note: Note) -> Note:
         note.archived = False
-        note.archived_at = "0"
+        note.archived_at = DEFAULT_ARCHIVED_AT
         self.storage.save(self.notes)
         return note

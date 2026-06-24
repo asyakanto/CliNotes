@@ -3,6 +3,7 @@ from json import dump, load, JSONDecodeError
 from typing import TYPE_CHECKING
 from pathlib import Path
 import logging
+from app.constants import SETTINGS_FILE, NOTES_FILE
 
 
 if TYPE_CHECKING:
@@ -14,8 +15,8 @@ class Storage:
     SETTINGS_PATH: Path
 
     def __init__(self) -> None:
-        self.JSON_PATH = Path(__file__).parent.parent / "notes.json"
-        self.SETTINGS_PATH = Path(__file__).parent.parent / "settings.json"
+        self.JSON_PATH = Path(__file__).parent.parent / NOTES_FILE
+        self.SETTINGS_PATH = Path(__file__).parent.parent / SETTINGS_FILE
 
     def load(self) -> list[dict]:
         try:

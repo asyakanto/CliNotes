@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from app.constants import TAG_PREFIXES, TAG_SEPARATORS
+from app.constants import TAG_PREFIXES, TAG_SEPARATORS, DEFAULT_ARCHIVED_AT
 
 
 @dataclass
@@ -11,7 +11,7 @@ class Note:
     created: str
     id: int = None
     archived: bool = False
-    archived_at: str = "0"
+    archived_at: str = DEFAULT_ARCHIVED_AT
 
 
 def get_date(dt: datetime) -> str:
