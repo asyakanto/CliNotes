@@ -8,9 +8,10 @@ class Note:
     title: str
     text: str
     tags: list[str]
+    created: str
     id: int = None
-    archieved: bool = False
-    deleted_at: str = "0"
+    archived: bool = False
+    archived_at: str = "0"
 
 
 def get_date(dt: datetime) -> str:

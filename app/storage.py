@@ -9,15 +9,6 @@ if TYPE_CHECKING:
     from app.notes import Note
 
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.FileHandler("app.log"),
-    ],
-)
-
-
 class Storage:
     JSON_PATH: Path
     SETTINGS_PATH: Path
