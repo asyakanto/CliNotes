@@ -49,7 +49,7 @@ ACTION_UNKNOWN = "unknown"
 SETTING_SHOW_ARCHIVED = "showArchivedNotes"
 
 # ── Tags ─────────────────────────────────
-TAG_PREFIXES = ["@", "#"]
+TAG_PREFIXES = ["@", "#", "tag:"]
 TAG_SEPARATORS = [" ", "\n", "\t"]
 
 # ── IDs ──────────────────────────────────

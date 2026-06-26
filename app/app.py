@@ -6,6 +6,7 @@ from app.constants import (
     DEFAULT_TEXT,
     DATE_FORMAT,
     AUTO_DELETE_DAYS,
+    TAG_PREFIXES,
 )
 import logging
 from datetime import datetime
@@ -121,3 +122,60 @@ class NotesApp:
         note.archived_at = DEFAULT_ARCHIVED_AT
         self.storage.save(self.notes)
         return note
+
+    def search_note(self, query: str) -> list[Note]:
+        raw_parts = query.split()
+        filters = []
+
+        for part in raw_parts:
+            is_tag = False
+            for sep in TAG_PREFIXES:
+                if part.strip().startswith(sep):
+                    filters.append(("tag", part.replace(sep, "").strip()))
+                    is_tag = True
+                    break
+            if is_tag:
+                continue
+
+            if part.strip().startswith("title:"):
+                filters.append(("title", part.replace("title:", "").strip()))
+            elif part.strip().startswith("text:"):
+                filters.append(("text", part.replace("text:", "").strip()))
+            else:
+                filters.append(("all", part.strip()))
+
+        if not filters:
+            return self.notes
+
+        results = self.notes
+        for filter_type, filter_value in filters:
+            if filter_value:
+                filtered = []
+                filter_value = filter_value.lower()
+                for note in results:
+                    match filter_type:
+                        case "all":
+                            if (
+                                filter_value in note.title.lower()
+                                or filter_value in note.text.lower()
+                            ):
+                                filtered.append(note)
+                            for tag in note.tags:
+                                if filter_value in tag:
+                                    filtered.append(note)
+                                    break
+                        case "tag":
+                            for tag in note.tags:
+                                if filter_value in tag:
+                                    filtered.append(note)
+                                    break
+                        case "title":
+                            if filter_value in note.title.lower():
+                                filtered.append(note)
+                        case "text":
+                            if filter_value in note.text.lower():
+                                filtered.append(note)
+                        case _:
+                            continue
+                results = filtered
+        return results

@@ -68,14 +68,16 @@ def display_notes(notes: list[Note], display_archive=False) -> str:
     return result
 
 
-def show_note(note: Note) -> None:
+def show_note(note: Note) -> str:
     clear_screen()
-    print(
+    result = ""
+    result += (
         "=" * UI_SEPARATOR_WIDTH
         + " "
         + make_cyan(note.title)
         + " "
         + "=" * UI_SEPARATOR_WIDTH
+        + "\n"
     )
     if note.archived:
         try:
@@ -85,41 +87,47 @@ def show_note(note: Note) -> None:
             )
         except ValueError:
             deleting_at = "unknown date"
-        print(make_red(f"ARCHIVED: note will be deleted at {deleting_at}"))
-    print(make_red(str(note.id)) + " #: " + make_muted(", ".join(note.tags)))
-    print()
-    print(note.text)
-    print()
-
-
-def interface(note: Note) -> str:
+        result += make_red(f"ARCHIVED: note will be deleted at {deleting_at}" + "\n")
+    result += make_red(str(note.id)) + " #: " + make_muted(", ".join(note.tags)) + "\n"
+    result += "\n"
+    result += note.text + "\n"
+    result += "\n"
     if not note.archived:
-        show_note(note)
-        print(
-            make_cyan(
-                f"Choose action: {KEY_QUIT} - quit; {KEY_ARCHIVE} - archive note; {KEY_EDIT} - edit note"
-            )
+        result += make_cyan(
+            f"Choose action: {KEY_QUIT} - quit; {KEY_ARCHIVE} - archive note; {KEY_EDIT} - edit note"
+            + "\n"
         )
+    else:
+        result += make_cyan(
+            f"Choose action: {KEY_QUIT} - quit; {KEY_RESTORE} - restore note; {KEY_DELETE} - delete note"
+            + "\n"
+        )
+    return result
+
+
+def note_interface(note: Note) -> str:
+    if not note.archived:
         mode = input(UI_PROMPT).strip().lower()
         if mode == KEY_QUIT:
             return ACTION_QUIT
         elif mode == KEY_ARCHIVE:
             return ACTION_ARCHIVE
         elif mode == KEY_EDIT:
-            print(make_cyan(f"Edit: {KEY_EDIT_TITLE} - title, {KEY_EDIT_TEXT} - text"))
-            mode = input(UI_PROMPT).strip().lower()
+            mode = (
+                input(
+                    make_cyan(f"Edit: {KEY_EDIT_TITLE} - title, {KEY_EDIT_TEXT} - text")
+                    + "\n"
+                    + UI_PROMPT
+                )
+                .strip()
+                .lower()
+            )
             if mode == KEY_EDIT_TITLE:
                 return ACTION_CHANGE_TITLE
             if mode == KEY_EDIT_TEXT:
                 return ACTION_CHANGE_TEXT
         return ACTION_UNKNOWN
     else:
-        show_note(note)
-        print(
-            make_cyan(
-                f"Choose action: {KEY_QUIT} - quit; {KEY_RESTORE} - restore note; {KEY_DELETE} - delete note"
-            )
-        )
         mode = input(UI_PROMPT).strip().lower()
         if mode == KEY_QUIT:
             return ACTION_QUIT
@@ -132,19 +140,33 @@ def interface(note: Note) -> str:
 
 def show_main_menu(app: NotesApp) -> str:
     clear_screen()
-    print(make_red("CliNotes") + ": " + get_date(datetime.now()))
-    print()
+    result = ""
+    result += make_red("CliNotes") + ": " + get_date(datetime.now()) + "\n"
+    result += "\n"
 
-    print(display_notes(app.notes, app.settings.get(SETTING_SHOW_ARCHIVED)))
+    result += display_notes(app.notes, app.settings.get(SETTING_SHOW_ARCHIVED)) + "\n"
 
-    print()
-
-    print(
-        make_cyan(
-            "Actions: {ID}"
-            + f"- open note; {KEY_QUIT} - quit; {KEY_CREATE} - create; {KEY_SEARCH} - search; {KEY_TOGGLE_ARCHIVED} - show archived; {KEY_SETTINGS} - settings"
-        )
+    result += make_cyan(
+        "Actions: {ID}"
+        + f"- open note; {KEY_QUIT} - quit; {KEY_CREATE} - create; {KEY_SEARCH} - search; {KEY_TOGGLE_ARCHIVED} - show archived; {KEY_SETTINGS} - settings"
+        + "\n"
     )
+
+    return result
+
+
+def main_interface(app: NotesApp) -> str:
+
     mode = input(UI_PROMPT).strip().lower()
 
     return mode
+
+
+def search_help():
+    return """╭─ Search help ─────────────────────────────╮
+│ word       — search in title and text     │
+│ @tag #tag  — search by tag                │
+│ title:word — search in title only         │
+│ text:word  — search in text only          │
+│ Separate multiple filters with spaces     │
+╰───────────────────────────────────────────╯"""
