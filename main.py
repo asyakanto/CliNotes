@@ -28,6 +28,7 @@ from app.constants import (
     FILE_LOG,
     SETTING_SHOW_ARCHIVED,
     UI_PROMPT,
+    ACTION_TYPE,
 )
 import sys
 from app.notes import Note
@@ -52,7 +53,7 @@ def main() -> None:
     def open_note(app: NotesApp, note: Note) -> None:
         while True:
             print(show_note(note))
-            action = note_interface(note)
+            action: ACTION_TYPE = note_interface(note)
 
             if action == ACTION_QUIT:
                 break
@@ -74,16 +75,16 @@ def main() -> None:
                 break
 
     try:
-        app = NotesApp()
+        app: NotesApp = NotesApp()
         logging.info("Application started")
         while True:
             print(show_main_menu(app))
-            mode = main_interface(app)
+            mode: str = main_interface(app)
 
             if mode.isdigit() and "." not in mode:
-                note = app.get_note(int(mode))
-                if note:
-                    open_note(app, note)
+                created_note: Note | None = app.get_note(int(mode))
+                if created_note:
+                    open_note(app, created_note)
 
             elif mode == KEY_QUIT:
                 logging.info("Application closed")
@@ -91,20 +92,20 @@ def main() -> None:
                 break
 
             elif mode == KEY_CREATE:
-                title = input(make_cyan("Note Name: ")).strip()
+                title: str = input(make_cyan("Note Name: ")).strip()
                 while not title:
                     print(make_red("Title cannot be empty"))
                     title = input(make_cyan("Note Name: "))
-                text = input(make_cyan("Text: "))
-                note = app.create_note(title, text)
+                text: str = input(make_cyan("Text: "))
+                note: Note = app.create_note(title, text)
                 open_note(app, note)
 
             elif mode == KEY_SEARCH:
-                query = input(make_cyan("Enter a search query (%h for help): "))
+                query: str = input(make_cyan("Enter a search query (%h for help): "))
                 while query == "%h":
                     print(search_help())
                     query = input(make_cyan("Enter a search query (%h for help): "))
-                results = app.search_note(query)
+                results: list[Note] = app.search_note(query)
                 if not results:
                     print(make_red("Nothing found"))
                     print()
@@ -114,13 +115,13 @@ def main() -> None:
                         clear_screen()
                         print(display_notes(results, True))
                         print(make_cyan(f"Enter ID to open, {KEY_QUIT} to go back"))
-                        mode = input(UI_PROMPT).lower().strip()
-                        if mode == "q":
+                        note_mode: str = input(UI_PROMPT).lower().strip()
+                        if note_mode == "q":
                             break
-                        if mode.isdigit() and "." not in str(mode):
-                            note = app.get_note(int(mode))
-                            if note in results:
-                                open_note(app, note)
+                        if note_mode.isdigit() and "." not in note_mode:
+                            found_note: Note | None = app.get_note(int(note_mode))
+                            if found_note in results:
+                                open_note(app, found_note)
             elif mode == KEY_TOGGLE_ARCHIVED:
                 app.settings.update(
                     {SETTING_SHOW_ARCHIVED: not app.settings.get(SETTING_SHOW_ARCHIVED)}

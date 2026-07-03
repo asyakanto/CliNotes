@@ -32,15 +32,15 @@ class NotesApp:
         self.settings = self.storage.load_settings()
 
     def _calculate_max_id(self) -> int:
-        max_id = NO_NOTES_MAX_ID
+        max_id: int = NO_NOTES_MAX_ID
         for note in self.notes:
             if note.id is not None and note.id > max_id and "." not in str(note.id):
                 max_id = note.id
         return max_id
 
     def _valid_notes_id(self) -> list[Note]:
-        ids = set()
-        duplicates_found = 0
+        ids: set[int] = set()
+        duplicates_found: int = 0
         for note in self.notes:
             if note.id is None or note.id < 0 or note.id in ids or "." in str(note.id):
                 self.max_id += 1
@@ -53,8 +53,8 @@ class NotesApp:
         return self.notes
 
     def _delete_archived_notes(self) -> list[Note]:
-        current_date = datetime.now()
-        to_delete = []
+        current_date: datetime = datetime.now()
+        to_delete: list[Note] = []
         for note in self.notes:
             if note.archived_at != DEFAULT_ARCHIVED_AT and note.archived:
                 try:
@@ -72,10 +72,12 @@ class NotesApp:
         if not text.strip():
             text = DEFAULT_TEXT
         self.max_id += 1
-        tags = get_tags(text)
-        created = get_date(datetime.now())
+        tags: list[str] = get_tags(text)
+        created: str = get_date(datetime.now())
         tags.insert(0, created)
-        note = Note(id=self.max_id, title=title, text=text, tags=tags, created=created)
+        note: Note = Note(
+            id=self.max_id, title=title, text=text, tags=tags, created=created
+        )
         self.notes.append(note)
         logging.info(f"Note created: #{note.id}: {note.title}")
         self.storage.save(self.notes)
@@ -95,9 +97,9 @@ class NotesApp:
         return note
 
     def delete_note(self, note: Note) -> None:
-        id = note.id
+        note_id: int | None = note.id
         for i, note_item in enumerate(self.notes):
-            if note_item.id == id:
+            if note_item.id == note_id:
                 self.notes.pop(i)
         self.storage.save(self.notes)
         return None
@@ -107,7 +109,7 @@ class NotesApp:
             note.title = new_title
         if new_text != note.text:
             if new_text:
-                tags = get_tags(new_text)
+                tags: list[str] = get_tags(new_text)
                 tags.insert(0, note.created)
                 note.tags = tags
                 note.text = new_text
@@ -124,8 +126,8 @@ class NotesApp:
         return note
 
     def search_note(self, query: str) -> list[Note]:
-        raw_parts = query.split()
-        filters = []
+        raw_parts: list[str] = query.split()
+        filters: list[tuple[str, str]] = []
 
         for part in raw_parts:
             is_tag = False
@@ -147,10 +149,10 @@ class NotesApp:
         if not filters:
             return self.notes
 
-        results = self.notes
+        results: list[Note] = self.notes
         for filter_type, filter_value in filters:
             if filter_value:
-                filtered = []
+                filtered: list[Note] = []
                 filter_value = filter_value.lower()
                 for note in results:
                     match filter_type:

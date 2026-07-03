@@ -27,6 +27,7 @@ from app.constants import (
     KEY_ARCHIVE,
     AUTO_DELETE_DAYS,
     DATE_FORMAT,
+    ACTION_TYPE,
 )
 from typing import TYPE_CHECKING
 from os import name, system
@@ -58,7 +59,7 @@ def make_red(text: str) -> str:
     return ANSI_RED + text + ANSI_RESET
 
 
-def display_notes(notes: list[Note], display_archive=False) -> str:
+def display_notes(notes: list[Note], display_archive: bool = False) -> str:
     result = ""
     for note in notes:
         if not note.archived:
@@ -105,7 +106,7 @@ def show_note(note: Note) -> str:
     return result
 
 
-def note_interface(note: Note) -> str:
+def note_interface(note: Note) -> ACTION_TYPE:
     if not note.archived:
         mode = input(UI_PROMPT).strip().lower()
         if mode == KEY_QUIT:
@@ -144,7 +145,9 @@ def show_main_menu(app: NotesApp) -> str:
     result += make_red("CliNotes") + ": " + get_date(datetime.now()) + "\n"
     result += "\n"
 
-    result += display_notes(app.notes, app.settings.get(SETTING_SHOW_ARCHIVED)) + "\n"
+    result += (
+        display_notes(app.notes, app.settings.get(SETTING_SHOW_ARCHIVED, False)) + "\n"
+    )
 
     result += make_cyan(
         "Actions: {ID}"
@@ -155,14 +158,14 @@ def show_main_menu(app: NotesApp) -> str:
     return result
 
 
-def main_interface(app: NotesApp) -> str:
+def main_interface(_app: NotesApp) -> str:
 
     mode = input(UI_PROMPT).strip().lower()
 
     return mode
 
 
-def search_help():
+def search_help() -> str:
     return """╭─ Search help ─────────────────────────────╮
 │ word       — search in title and text     │
 │ @tag #tag  — search by tag                │
