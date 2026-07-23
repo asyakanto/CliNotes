@@ -19,16 +19,16 @@ def get_date(dt: datetime) -> str:
     return f"{dt.day:02d}-{dt.month:02d}-{dt.year}"
 
 
+_PATTERN: str = "|".join(map(re.escape, TAG_PREFIXES))
+
+
 def get_tags(text: str) -> list[str]:
     tags: list[str] = []
-    rest: str
-    parts: list[str]
-    pattern: str = "|".join(map(re.escape, TAG_PREFIXES))
     for word in text.split():
         for prefix in TAG_PREFIXES:
             if word.startswith(prefix):
-                rest = word[len(prefix) :]
-                parts = re.split(pattern, rest)
+                rest: str = word[len(prefix) :]
+                parts: list[str] = re.split(_PATTERN, rest)
                 for part in parts:
                     if part and part not in tags:
                         tags.append(part)

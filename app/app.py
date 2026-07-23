@@ -1,4 +1,4 @@
-from app.notes import Note, get_date, get_tags
+from app.models import Note, get_date, get_tags
 from app.storage import Storage
 from app.constants import (
     NO_NOTES_MAX_ID,
@@ -6,8 +6,8 @@ from app.constants import (
     DEFAULT_TEXT,
     DATE_FORMAT,
     AUTO_DELETE_DAYS,
-    TAG_PREFIXES,
 )
+from app.search import parse_query, apply_filters
 import logging
 from datetime import datetime
 
@@ -26,7 +26,8 @@ class NotesApp:
 
         self.max_id = self._calculate_max_id()
 
-        self.notes = self._valid_notes_id()
+        self._notifications: list[str] = []
+        self.notes = self._fix_invalid_ids()
         self.notes = self._delete_archived_notes()
 
         self.settings = self.storage.load_settings()
@@ -38,7 +39,7 @@ class NotesApp:
                 max_id = note.id
         return max_id
 
-    def _valid_notes_id(self) -> list[Note]:
+    def _fix_invalid_ids(self) -> list[Note]:
         ids: set[int] = set()
         duplicates_found: int = 0
         for note in self.notes:
@@ -55,6 +56,7 @@ class NotesApp:
     def _delete_archived_notes(self) -> list[Note]:
         current_date: datetime = datetime.now()
         to_delete: list[Note] = []
+        notes_before_deleting: int = len(self.notes)
         for note in self.notes:
             if note.archived_at != DEFAULT_ARCHIVED_AT and note.archived:
                 try:
@@ -66,6 +68,11 @@ class NotesApp:
                     continue
         for note in to_delete:
             self.delete_note(note)
+        notes_after_deleting: int = len(self.notes)
+        if notes_after_deleting != notes_before_deleting:
+            self.add_notification(
+                f"Deleted {notes_before_deleting - notes_after_deleting} expired notes"
+            )
         return self.notes
 
     def create_note(self, title: str, text: str) -> Note:
@@ -101,6 +108,7 @@ class NotesApp:
         for i, note_item in enumerate(self.notes):
             if note_item.id == note_id:
                 self.notes.pop(i)
+                break
         self.storage.save(self.notes)
         return None
 
@@ -125,96 +133,17 @@ class NotesApp:
         self.storage.save(self.notes)
         return note
 
-    @staticmethod
-    def _split_with_quotes(query: str) -> list[str]:
-        tokens: list[str] = []
-        current_token: str = ""
-        in_quotes: bool = False
-        for char in query:
-            if char == '"':
-                in_quotes = not in_quotes
-            elif char == " " and not in_quotes:
-                if current_token:
-                    tokens.append(current_token.strip().lower())
-                    current_token = ""
-            else:
-                current_token += char
-        if current_token:
-            tokens.append(current_token.strip().lower())
-        return tokens
-
-    @staticmethod
-    def _merge_prefixes(tokens: list[str]) -> list[str]:
-        current_token: str = ""
-        merged_tokens: list[str] = []
-        for token in tokens:
-            if token.startswith("title:") or token.startswith("text:"):
-                if current_token:
-                    merged_tokens.append(current_token)
-                current_token = token
-            else:
-                merged_tokens.append(current_token + token)
-                current_token = ""
-        if current_token:
-            merged_tokens.append(current_token)
-        return merged_tokens
-
     def search_note(self, query: str) -> list[Note]:
-        raw_parts: list[str] = self._split_with_quotes(query)
-        raw_parts = self._merge_prefixes(raw_parts)
-        filters: list[tuple[str, str]] = []
-
-        for part in raw_parts:
-            is_tag: bool = False
-            for sep in TAG_PREFIXES:
-                if part.strip().startswith(sep):
-                    filters.append(("tag", part.removeprefix(sep).strip()))
-                    is_tag = True
-                    break
-            if is_tag:
-                continue
-
-            if part.strip().startswith("title:"):
-                filters.append(("title", part.removeprefix("title:").strip()))
-            elif part.strip().startswith("text:"):
-                filters.append(("text", part.removeprefix("text:").strip()))
-            else:
-                filters.append(("all", part.strip()))
-
-        results: list[Note] = self.notes
-        for filter_type, filter_value in filters:
-            if filter_value:
-                filtered: list[Note] = []
-                filter_value_lower = filter_value.lower()
-                for note in results:
-                    match filter_type:
-                        case "all":
-                            if (
-                                filter_value_lower in note.title.lower()
-                                or filter_value_lower in note.text.lower()
-                            ):
-                                if note not in filtered:
-                                    filtered.append(note)
-                            for tag in note.tags:
-                                if filter_value_lower in tag.lower():
-                                    if note not in filtered:
-                                        filtered.append(note)
-                                    break
-                        case "tag":
-                            for tag in note.tags:
-                                if filter_value_lower in tag.lower():
-                                    if note not in filtered:
-                                        filtered.append(note)
-                                    break
-                        case "title":
-                            if filter_value_lower in note.title.lower():
-                                if note not in filtered:
-                                    filtered.append(note)
-                        case "text":
-                            if filter_value_lower in note.text.lower():
-                                if note not in filtered:
-                                    filtered.append(note)
-                        case _:
-                            continue
-                results = filtered
+        filters: list[tuple[str, str]] = parse_query(query)
+        results: list[Note] = apply_filters(self.notes, filters)
         return results
+
+    def add_notification(self, message: str) -> None:
+        if message.strip():
+            self._notifications.append(message.strip())
+        return None
+
+    def pop_notifications(self) -> list[str]:
+        notifications: list[str] = self._notifications
+        self._notifications = []
+        return notifications

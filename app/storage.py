@@ -4,10 +4,11 @@ from typing import TYPE_CHECKING, Any
 from pathlib import Path
 import logging
 from app.constants import FILE_NOTES, FILE_SETTINGS
+from dataclasses import asdict
 
 
 if TYPE_CHECKING:
-    from app.notes import Note
+    from app.models import Note
 
 
 class Storage:
@@ -32,13 +33,10 @@ class Storage:
             return []
 
     def save(self, notes: list[Note]) -> None:
-        from dataclasses import asdict
 
-        lib: list[dict[str, Any]] = []
-        for note in notes:
-            lib.append(asdict(note))
+        notes_serialized: list[dict[str, Any]] = [asdict(note) for note in notes]
         with open(self.JSON_PATH, "w", encoding="utf-8") as file:
-            dump(lib, file, ensure_ascii=False, indent=2)
+            dump(notes_serialized, file, ensure_ascii=False, indent=2)
             logging.info(f"Saved {len(notes)} notes")
 
     def load_settings(self) -> dict[str, Any]:

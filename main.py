@@ -3,37 +3,27 @@ from app.interface import (
     clear_screen,
     make_cyan,
     make_red,
-    note_interface,
     main_interface,
     display_notes,
-    show_note,
     show_main_menu,
-    search_help,
+    open_note,
 )
 import logging
-from prompt_toolkit import prompt
 from app.constants import (
     KEY_SETTINGS,
     KEY_TOGGLE_ARCHIVED,
     KEY_SEARCH,
     KEY_CREATE,
     KEY_QUIT,
-    ACTION_DELETE,
-    ACTION_RESTORE,
-    ACTION_UNKNOWN,
-    ACTION_CHANGE_TEXT,
-    ACTION_CHANGE_TITLE,
-    ACTION_ARCHIVE,
-    ACTION_QUIT,
     FILE_LOG,
     SETTING_SHOW_ARCHIVED,
     UI_PROMPT,
-    ACTION_TYPE,
     KEY_SEARCH_HELP,
     KEY_SEARCH_QUIT,
 )
 import sys
-from app.notes import Note
+from app.models import Note
+from app.search import search_help
 
 
 def main() -> None:
@@ -52,34 +42,11 @@ def main() -> None:
             stream=sys.stderr,
         )
 
-    def open_note(app: NotesApp, note: Note) -> None:
-        while True:
-            print(show_note(note))
-            action: ACTION_TYPE = note_interface(note)
-
-            if action == ACTION_QUIT:
-                break
-            elif action == ACTION_ARCHIVE:
-                app.archive_note(note)
-            elif action == ACTION_CHANGE_TITLE:
-                new_title = prompt("New title: ", default=note.title).strip()
-                app.edit_note(note, new_title, note.text)
-            elif action == ACTION_CHANGE_TEXT:
-                new_text = prompt("New text: ", default=note.text).strip()
-                app.edit_note(note, note.title, new_text)
-            elif action == ACTION_UNKNOWN:
-                print()
-                input(make_red("Wrong action"))
-            elif action == ACTION_RESTORE:
-                app.restore_note(note)
-            elif action == ACTION_DELETE:
-                app.delete_note(note)
-                break
-
     try:
         app: NotesApp = NotesApp()
         logging.info("Application started")
         while True:
+            clear_screen()
             print(show_main_menu(app))
             mode: str = main_interface(app)
 
@@ -126,7 +93,7 @@ def main() -> None:
                         print(display_notes(results, True))
                         print(make_cyan(f"Enter ID to open, {KEY_QUIT} to go back"))
                         note_mode: str = input(UI_PROMPT).lower().strip()
-                        if note_mode == "q":
+                        if note_mode == KEY_QUIT:
                             break
                         if note_mode.isdigit() and "." not in note_mode:
                             found_note: Note | None = app.get_note(int(note_mode))
@@ -134,7 +101,11 @@ def main() -> None:
                                 open_note(app, found_note)
             elif mode == KEY_TOGGLE_ARCHIVED:
                 app.settings.update(
-                    {SETTING_SHOW_ARCHIVED: not app.settings.get(SETTING_SHOW_ARCHIVED)}
+                    {
+                        SETTING_SHOW_ARCHIVED: not app.settings.get(
+                            SETTING_SHOW_ARCHIVED, False
+                        )
+                    }
                 )
                 app.storage.save_settings(app.settings)
             elif mode == KEY_SETTINGS:

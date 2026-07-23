@@ -28,16 +28,15 @@ from app.constants import (
     AUTO_DELETE_DAYS,
     DATE_FORMAT,
     ACTION_TYPE,
-    KEY_SEARCH_QUIT,
 )
 from typing import TYPE_CHECKING
 from os import name, system
-from app.notes import get_date
+from app.models import get_date
 from datetime import datetime, timedelta
-
+from prompt_toolkit import prompt
 
 if TYPE_CHECKING:
-    from app.notes import Note
+    from app.models import Note
     from app.app import NotesApp
 
 
@@ -46,6 +45,32 @@ def clear_screen() -> None:
         system("cls")
     else:
         system("clear")
+
+
+def open_note(app: NotesApp, note: Note) -> None:
+    while True:
+        clear_screen()
+        print(show_note(note))
+        action: ACTION_TYPE = note_interface(note)
+
+        if action == ACTION_QUIT:
+            break
+        elif action == ACTION_ARCHIVE:
+            app.archive_note(note)
+        elif action == ACTION_CHANGE_TITLE:
+            new_title: str = prompt("New title: ", default=note.title).strip()
+            app.edit_note(note, new_title, note.text)
+        elif action == ACTION_CHANGE_TEXT:
+            new_text: str = prompt("New text: ", default=note.text).strip()
+            app.edit_note(note, note.title, new_text)
+        elif action == ACTION_UNKNOWN:
+            print()
+            input(make_red("Wrong action"))
+        elif action == ACTION_RESTORE:
+            app.restore_note(note)
+        elif action == ACTION_DELETE:
+            app.delete_note(note)
+            break
 
 
 def make_cyan(text: str) -> str:
@@ -61,27 +86,21 @@ def make_red(text: str) -> str:
 
 
 def display_notes(notes: list[Note], display_archive: bool = False) -> str:
-    result = ""
+    lines: list[str] = []
     for note in notes:
         if not note.archived:
-            result += f"#{note.id} {note.title}" + "\n"
+            lines.append(f"#{note.id} {note.title}")
         elif display_archive:
-            result += make_muted(f"#{note.id} {note.title}") + "\n"
-    return result
+            lines.append(make_muted(f"#{note.id} {note.title}"))
+    return "\n".join(lines) + "\n"
 
 
 def show_note(note: Note) -> str:
-    clear_screen()
-    result = ""
-    result += (
-        "=" * UI_SEPARATOR_WIDTH
-        + " "
-        + make_cyan(note.title)
-        + " "
-        + "=" * UI_SEPARATOR_WIDTH
-        + "\n"
-    )
+    result: str = ""
+    separator: str = "=" * UI_SEPARATOR_WIDTH
+    result += separator + " " + make_cyan(note.title) + " " + separator + "\n"
     if note.archived:
+        deleting_at: str
         try:
             deleting_at = get_date(
                 datetime.strptime(note.archived_at, DATE_FORMAT)
@@ -108,6 +127,7 @@ def show_note(note: Note) -> str:
 
 
 def note_interface(note: Note) -> ACTION_TYPE:
+    mode: str
     if not note.archived:
         mode = input(UI_PROMPT).strip().lower()
         if mode == KEY_QUIT:
@@ -115,7 +135,7 @@ def note_interface(note: Note) -> ACTION_TYPE:
         elif mode == KEY_ARCHIVE:
             return ACTION_ARCHIVE
         elif mode == KEY_EDIT:
-            mode = (
+            editing_mode: str = (
                 input(
                     make_cyan(f"Edit: {KEY_EDIT_TITLE} - title, {KEY_EDIT_TEXT} - text")
                     + "\n"
@@ -124,9 +144,9 @@ def note_interface(note: Note) -> ACTION_TYPE:
                 .strip()
                 .lower()
             )
-            if mode == KEY_EDIT_TITLE:
+            if editing_mode == KEY_EDIT_TITLE:
                 return ACTION_CHANGE_TITLE
-            if mode == KEY_EDIT_TEXT:
+            if editing_mode == KEY_EDIT_TEXT:
                 return ACTION_CHANGE_TEXT
         return ACTION_UNKNOWN
     else:
@@ -141,10 +161,10 @@ def note_interface(note: Note) -> ACTION_TYPE:
 
 
 def show_main_menu(app: NotesApp) -> str:
-    clear_screen()
-    result = ""
+    result: str = ""
     result += make_red("CliNotes") + ": " + get_date(datetime.now()) + "\n"
     result += "\n"
+    result += get_notifications(app)
 
     result += (
         display_notes(app.notes, app.settings.get(SETTING_SHOW_ARCHIVED, False)) + "\n"
@@ -152,7 +172,7 @@ def show_main_menu(app: NotesApp) -> str:
 
     result += make_cyan(
         "Actions: {ID}"
-        + f"- open note; {KEY_QUIT} - quit; {KEY_CREATE} - create; {KEY_SEARCH} - search; {KEY_TOGGLE_ARCHIVED} - show archived; {KEY_SETTINGS} - settings"
+        + f" - open note; {KEY_QUIT} - quit; {KEY_CREATE} - create; {KEY_SEARCH} - search; {KEY_TOGGLE_ARCHIVED} - show archived; {KEY_SETTINGS} - settings"
         + "\n"
     )
 
@@ -166,18 +186,12 @@ def main_interface(_app: NotesApp) -> str:
     return mode
 
 
-def search_help() -> str:
-    return f"""╭─ Search help ──────────────────────────────╮
-│ word           — search in title & text    │
-│ @tag  #tag     — search by tag             │
-│ title:word     — search in title only      │
-│ text:word      — search in text only       │
-│ "word"         — search exact phrase       │
-│ title:"phrase" — exact phrase in title     │
-│ text:"phrase"  — exact phrase in text      │
-│                                            │
-│ Combine filters with spaces: AND logic     │
-│ Example: @work title:"meeting notes"       │
-│                                            │
-│ {KEY_SEARCH_QUIT}             — quit search               │
-╰────────────────────────────────────────────╯"""
+def get_notifications(app: NotesApp) -> str:
+    if not app._notifications:
+        return ""
+
+    result: str = ""
+
+    for notification in app.pop_notifications():
+        result += make_red("[!] " + notification + "\n")
+    return result + "\n"
