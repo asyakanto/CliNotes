@@ -125,61 +125,93 @@ class NotesApp:
         self.storage.save(self.notes)
         return note
 
+    @staticmethod
+    def _split_with_quotes(query: str) -> list[str]:
+        tokens: list[str] = []
+        current_token: str = ""
+        in_quotes: bool = False
+        for char in query:
+            if char == '"':
+                in_quotes = not in_quotes
+            elif char == " " and not in_quotes:
+                if current_token:
+                    tokens.append(current_token.strip().lower())
+                    current_token = ""
+            else:
+                current_token += char
+        if current_token:
+            tokens.append(current_token.strip().lower())
+        return tokens
+
+    @staticmethod
+    def _merge_prefixes(tokens: list[str]) -> list[str]:
+        current_token: str = ""
+        merged_tokens: list[str] = []
+        for token in tokens:
+            if token.startswith("title:") or token.startswith("text:"):
+                if current_token:
+                    merged_tokens.append(current_token)
+                current_token = token
+            else:
+                merged_tokens.append(current_token + token)
+                current_token = ""
+        if current_token:
+            merged_tokens.append(current_token)
+        return merged_tokens
+
     def search_note(self, query: str) -> list[Note]:
-        raw_parts: list[str] = query.split()
+        raw_parts: list[str] = self._split_with_quotes(query)
+        raw_parts = self._merge_prefixes(raw_parts)
         filters: list[tuple[str, str]] = []
 
         for part in raw_parts:
-            is_tag = False
+            is_tag: bool = False
             for sep in TAG_PREFIXES:
                 if part.strip().startswith(sep):
-                    filters.append(("tag", part.replace(sep, "").strip()))
+                    filters.append(("tag", part.removeprefix(sep).strip()))
                     is_tag = True
                     break
             if is_tag:
                 continue
 
             if part.strip().startswith("title:"):
-                filters.append(("title", part.replace("title:", "").strip()))
+                filters.append(("title", part.removeprefix("title:").strip()))
             elif part.strip().startswith("text:"):
-                filters.append(("text", part.replace("text:", "").strip()))
+                filters.append(("text", part.removeprefix("text:").strip()))
             else:
                 filters.append(("all", part.strip()))
-
-        if not filters:
-            return self.notes
 
         results: list[Note] = self.notes
         for filter_type, filter_value in filters:
             if filter_value:
                 filtered: list[Note] = []
-                filter_value = filter_value.lower()
+                filter_value_lower = filter_value.lower()
                 for note in results:
                     match filter_type:
                         case "all":
                             if (
-                                filter_value in note.title.lower()
-                                or filter_value in note.text.lower()
+                                filter_value_lower in note.title.lower()
+                                or filter_value_lower in note.text.lower()
                             ):
                                 if note not in filtered:
                                     filtered.append(note)
                             for tag in note.tags:
-                                if filter_value in tag:
+                                if filter_value_lower in tag.lower():
                                     if note not in filtered:
                                         filtered.append(note)
                                     break
                         case "tag":
                             for tag in note.tags:
-                                if filter_value in tag:
+                                if filter_value_lower in tag.lower():
                                     if note not in filtered:
                                         filtered.append(note)
                                     break
                         case "title":
-                            if filter_value in note.title.lower():
+                            if filter_value_lower in note.title.lower():
                                 if note not in filtered:
                                     filtered.append(note)
                         case "text":
-                            if filter_value in note.text.lower():
+                            if filter_value_lower in note.text.lower():
                                 if note not in filtered:
                                     filtered.append(note)
                         case _:

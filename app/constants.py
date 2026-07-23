@@ -58,3 +58,8 @@ TAG_PREFIXES: Final[list[str]] = ["@", "#", "tag:"]
 
 # ── IDs ──────────────────────────────────
 NO_NOTES_MAX_ID: Final = -1
+
+
+# ── Search ─────────────────────────────
+KEY_SEARCH_HELP: Final = "%h"
+KEY_SEARCH_QUIT: Final = "%q"

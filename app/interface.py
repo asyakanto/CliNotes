@@ -28,6 +28,7 @@ from app.constants import (
     AUTO_DELETE_DAYS,
     DATE_FORMAT,
     ACTION_TYPE,
+    KEY_SEARCH_QUIT,
 )
 from typing import TYPE_CHECKING
 from os import name, system
@@ -166,10 +167,17 @@ def main_interface(_app: NotesApp) -> str:
 
 
 def search_help() -> str:
-    return """╭─ Search help ─────────────────────────────╮
-│ word       — search in title and text     │
-│ @tag #tag  — search by tag                │
-│ title:word — search in title only         │
-│ text:word  — search in text only          │
-│ Separate multiple filters with spaces     │
-╰───────────────────────────────────────────╯"""
+    return f"""╭─ Search help ──────────────────────────────╮
+│ word           — search in title & text    │
+│ @tag  #tag     — search by tag             │
+│ title:word     — search in title only      │
+│ text:word      — search in text only       │
+│ "word"         — search exact phrase       │
+│ title:"phrase" — exact phrase in title     │
+│ text:"phrase"  — exact phrase in text      │
+│                                            │
+│ Combine filters with spaces: AND logic     │
+│ Example: @work title:"meeting notes"       │
+│                                            │
+│ {KEY_SEARCH_QUIT}             — quit search               │
+╰────────────────────────────────────────────╯"""

@@ -29,6 +29,8 @@ from app.constants import (
     SETTING_SHOW_ARCHIVED,
     UI_PROMPT,
     ACTION_TYPE,
+    KEY_SEARCH_HELP,
+    KEY_SEARCH_QUIT,
 )
 import sys
 from app.notes import Note
@@ -101,10 +103,18 @@ def main() -> None:
                 open_note(app, note)
 
             elif mode == KEY_SEARCH:
-                query: str = input(make_cyan("Enter a search query (%h for help): "))
-                while query == "%h":
+                query: str = input(
+                    make_cyan(f"Enter a search query ({KEY_SEARCH_HELP} for help): ")
+                )
+                while query == KEY_SEARCH_HELP:
                     print(search_help())
-                    query = input(make_cyan("Enter a search query (%h for help): "))
+                    query = input(
+                        make_cyan(
+                            f"Enter a search query ({KEY_SEARCH_HELP} for help): "
+                        )
+                    )
+                if query == KEY_SEARCH_QUIT:
+                    continue
                 results: list[Note] = app.search_note(query)
                 if not results:
                     print(make_red("Nothing found"))
