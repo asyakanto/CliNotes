@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
-from app.constants import TAG_PREFIXES, TAG_SEPARATORS, DEFAULT_ARCHIVED_AT
+from app.constants import TAG_PREFIXES, DEFAULT_ARCHIVED_AT
+import re
 
 
 @dataclass
@@ -20,26 +21,16 @@ def get_date(dt: datetime) -> str:
 
 def get_tags(text: str) -> list[str]:
     tags: list[str] = []
-    for s in TAG_PREFIXES:
-        if s in text:
-            current_text: str = text
-            while s in current_text:
-                index_of_s: int = current_text.index(s)
-                if index_of_s != 0 and current_text[index_of_s - 1] == "\\":
-                    current_text = current_text[index_of_s + 2 :]
-                else:
-                    current_text = current_text[index_of_s + 1 :]
-                    min_word: str = ""
-                    for i in TAG_PREFIXES + TAG_SEPARATORS:
-                        word: str = current_text.split(i).pop(0)
-                        if min_word:
-                            if len(word) < len(min_word):
-                                min_word = word
-                        else:
-                            min_word = word
-                    if min_word and min_word not in tags:
-                        tags.append(min_word)
-                    current_text = current_text[len(min_word) :]
-        else:
-            continue
+    rest: str
+    parts: list[str]
+    pattern: str = "|".join(map(re.escape, TAG_PREFIXES))
+    for word in text.split():
+        for prefix in TAG_PREFIXES:
+            if word.startswith(prefix):
+                rest = word[len(prefix) :]
+                parts = re.split(pattern, rest)
+                for part in parts:
+                    if part and part not in tags:
+                        tags.append(part)
+                break
     return tags

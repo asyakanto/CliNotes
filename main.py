@@ -128,7 +128,8 @@ def main() -> None:
                 )
                 app.storage.save_settings(app.settings)
             elif mode == KEY_SETTINGS:
-                pass
+                raise NotImplementedError("Settings menu not implemented yet")
+
     except KeyboardInterrupt:
         logging.info("Application interrupted by user")
     except Exception:

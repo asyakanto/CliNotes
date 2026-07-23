@@ -161,22 +161,27 @@ class NotesApp:
                                 filter_value in note.title.lower()
                                 or filter_value in note.text.lower()
                             ):
-                                filtered.append(note)
+                                if note not in filtered:
+                                    filtered.append(note)
                             for tag in note.tags:
                                 if filter_value in tag:
-                                    filtered.append(note)
+                                    if note not in filtered:
+                                        filtered.append(note)
                                     break
                         case "tag":
                             for tag in note.tags:
                                 if filter_value in tag:
-                                    filtered.append(note)
+                                    if note not in filtered:
+                                        filtered.append(note)
                                     break
                         case "title":
                             if filter_value in note.title.lower():
-                                filtered.append(note)
+                                if note not in filtered:
+                                    filtered.append(note)
                         case "text":
                             if filter_value in note.text.lower():
-                                filtered.append(note)
+                                if note not in filtered:
+                                    filtered.append(note)
                         case _:
                             continue
                 results = filtered

@@ -27,7 +27,7 @@ UI_SEPARATOR_WIDTH: Final = 15
 KEY_QUIT: Final = "q"
 KEY_CREATE: Final = "c"
 KEY_SEARCH: Final = "s"
-KEY_TOGGLE_ARCHIVED: Final = "a"
+KEY_TOGGLE_ARCHIVED: Final = "t"
 KEY_SETTINGS: Final = ","
 
 # ── Keys (меню заметки) ─────────────────
@@ -55,7 +55,6 @@ SETTING_SHOW_ARCHIVED: Final = "showArchivedNotes"
 
 # ── Tags ─────────────────────────────────
 TAG_PREFIXES: Final[list[str]] = ["@", "#", "tag:"]
-TAG_SEPARATORS: Final[list[str]] = [" ", "\n", "\t"]
 
 # ── IDs ──────────────────────────────────
 NO_NOTES_MAX_ID: Final = -1
