@@ -69,8 +69,10 @@ def open_note(app: NotesApp, note: Note) -> None:
         elif action == ACTION_RESTORE:
             app.restore_note(note)
         elif action == ACTION_DELETE:
-            app.delete_note(note)
-            break
+            confirm: str = input(make_red("Delete this note? (y/n): ")).strip().lower()
+            if confirm == "y":
+                app.delete_note(note)
+                break
 
 
 def make_cyan(text: str) -> str:
