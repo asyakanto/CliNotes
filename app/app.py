@@ -1,15 +1,18 @@
-from app.models import Note, get_date, get_tags
-from app.storage import Storage
-from app.constants import (
-    NO_NOTES_MAX_ID,
-    DEFAULT_ARCHIVED_AT,
-    DEFAULT_TEXT,
-    DATE_FORMAT,
-    AUTO_DELETE_DAYS,
-)
-from app.search import parse_query, apply_filters
 import logging
 from datetime import datetime
+
+from app.constants import (
+    AUTO_DELETE_DAYS,
+    DATE_FORMAT,
+    DEFAULT_ARCHIVED_AT,
+    DEFAULT_TEXT,
+    NO_NOTES_MAX_ID,
+)
+from app.models import Note, get_date, get_local_now, get_tags
+from app.search import apply_filters, parse_query
+from app.storage import Storage
+
+logger = logging.getLogger(__name__)
 
 
 class NotesApp:
@@ -49,19 +52,22 @@ class NotesApp:
                 duplicates_found += 1
             ids.add(note.id)
         if duplicates_found:
-            logging.warning(f"Fixed {duplicates_found} invalid ID")
+            logger.warning(f"Fixed {duplicates_found} invalid ID")
             self.storage.save(self.notes)
         return self.notes
 
     def _delete_archived_notes(self) -> list[Note]:
-        current_date: datetime = datetime.now()
+        current_date: datetime = get_local_now()
         to_delete: list[Note] = []
         notes_before_deleting: int = len(self.notes)
         for note in self.notes:
             if note.archived_at != DEFAULT_ARCHIVED_AT and note.archived:
                 try:
                     if (
-                        current_date - datetime.strptime(note.archived_at, DATE_FORMAT)
+                        current_date
+                        - datetime.strptime(note.archived_at, DATE_FORMAT).replace(
+                            tzinfo=get_local_now().tzinfo
+                        )
                     ).days > AUTO_DELETE_DAYS:
                         to_delete.append(note)
                 except ValueError:
@@ -80,13 +86,13 @@ class NotesApp:
             text = DEFAULT_TEXT
         self.max_id += 1
         tags: list[str] = get_tags(text)
-        created: str = get_date(datetime.now())
+        created: str = get_date(get_local_now())
         tags.insert(0, created)
         note: Note = Note(
             id=self.max_id, title=title, text=text, tags=tags, created=created
         )
         self.notes.append(note)
-        logging.info(f"Note created: #{note.id}: {note.title}")
+        logger.info(f"Note created: #{note.id}: {note.title}")
         self.storage.save(self.notes)
         return note
 
@@ -98,8 +104,8 @@ class NotesApp:
 
     def archive_note(self, note: Note) -> Note:
         note.archived = True
-        note.archived_at = get_date(datetime.now())
-        logging.info(f"Note archived: #{note.id}: {note.title}")
+        note.archived_at = get_date(get_local_now())
+        logger.info(f"Note archived: #{note.id}: {note.title}")
         self.storage.save(self.notes)
         return note
 
@@ -110,7 +116,6 @@ class NotesApp:
                 self.notes.pop(i)
                 break
         self.storage.save(self.notes)
-        return None
 
     def edit_note(self, note: Note, new_title: str, new_text: str) -> Note:
         if new_title and new_title != note.title:
@@ -141,7 +146,6 @@ class NotesApp:
     def add_notification(self, message: str) -> None:
         if message.strip():
             self._notifications.append(message.strip())
-        return None
 
     def pop_notifications(self) -> list[str]:
         notifications: list[str] = self._notifications

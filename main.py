@@ -1,29 +1,32 @@
-from app.app import NotesApp
-from app.interface import (
-    clear_screen,
-    make_cyan,
-    make_red,
-    main_interface,
-    display_notes,
-    show_main_menu,
-    open_note,
-)
 import logging
+import sys
+
+from app.app import NotesApp
 from app.constants import (
-    KEY_SETTINGS,
-    KEY_TOGGLE_ARCHIVED,
-    KEY_SEARCH,
+    FILE_LOG,
     KEY_CREATE,
     KEY_QUIT,
-    FILE_LOG,
-    SETTING_SHOW_ARCHIVED,
-    UI_PROMPT,
+    KEY_SEARCH,
     KEY_SEARCH_HELP,
     KEY_SEARCH_QUIT,
+    KEY_SETTINGS,
+    KEY_TOGGLE_ARCHIVED,
+    SETTING_SHOW_ARCHIVED,
+    UI_PROMPT,
 )
-import sys
+from app.interface import (
+    clear_screen,
+    display_notes,
+    main_interface,
+    make_cyan,
+    make_red,
+    open_note,
+    show_main_menu,
+)
 from app.models import Note
 from app.search import search_help
+
+logger = logging.getLogger(__name__)
 
 
 def main() -> None:
@@ -44,7 +47,7 @@ def main() -> None:
 
     try:
         app: NotesApp = NotesApp()
-        logging.info("Application started")
+        logger.info("Application started")
         while True:
             clear_screen()
             print(show_main_menu(app))
@@ -56,7 +59,7 @@ def main() -> None:
                     open_note(app, created_note)
 
             elif mode == KEY_QUIT:
-                logging.info("Application closed")
+                logger.info("Application closed")
                 clear_screen()
                 break
 
@@ -112,9 +115,9 @@ def main() -> None:
                 raise NotImplementedError("Settings menu not implemented yet")
 
     except KeyboardInterrupt:
-        logging.info("Application interrupted by user")
+        logger.info("Application interrupted by user")
     except Exception:
-        logging.exception("Fatal error")
+        logger.exception("Fatal error")
         print("An error occurred. Details in the app.log")
 
 

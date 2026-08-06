@@ -1,12 +1,12 @@
+from app.constants import KEY_SEARCH_QUIT, TAG_PREFIXES
 from app.models import Note
-from app.constants import TAG_PREFIXES, KEY_SEARCH_QUIT
 
 
 def merge_prefixes(tokens: list[str]) -> list[str]:
     current_token: str = ""
     merged_tokens: list[str] = []
     for token in tokens:
-        if token.startswith("title:") or token.startswith("text:"):
+        if token.startswith(("title:", "text:")):
             if current_token:
                 merged_tokens.append(current_token)
             current_token = token
@@ -73,9 +73,8 @@ def apply_filters(notes: list[Note], filters: list[tuple[str, str]]) -> list[Not
                         if (
                             filter_value_lower in note.title.lower()
                             or filter_value_lower in note.text.lower()
-                        ):
-                            if note not in filtered:
-                                filtered.append(note)
+                        ) and note not in filtered:
+                            filtered.append(note)
                         for tag in note.tags:
                             if filter_value_lower in tag.lower():
                                 if note not in filtered:
@@ -88,13 +87,17 @@ def apply_filters(notes: list[Note], filters: list[tuple[str, str]]) -> list[Not
                                     filtered.append(note)
                                 break
                     case "title":
-                        if filter_value_lower in note.title.lower():
-                            if note not in filtered:
-                                filtered.append(note)
+                        if (
+                            filter_value_lower in note.title.lower()
+                            and note not in filtered
+                        ):
+                            filtered.append(note)
                     case "text":
-                        if filter_value_lower in note.text.lower():
-                            if note not in filtered:
-                                filtered.append(note)
+                        if (
+                            filter_value_lower in note.text.lower()
+                            and note not in filtered
+                        ):
+                            filtered.append(note)
                     case _:
                         continue
             results = filtered

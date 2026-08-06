@@ -1,43 +1,46 @@
 from __future__ import annotations
-from app.constants import (
-    ANSI_RESET,
-    ANSI_RED,
-    ANSI_CYAN,
-    ANSI_DIM,
-    UI_SEPARATOR_WIDTH,
-    UI_PROMPT,
-    KEY_SETTINGS,
-    KEY_TOGGLE_ARCHIVED,
-    KEY_SEARCH,
-    KEY_CREATE,
-    KEY_QUIT,
-    SETTING_SHOW_ARCHIVED,
-    ACTION_DELETE,
-    ACTION_RESTORE,
-    ACTION_QUIT,
-    KEY_DELETE,
-    KEY_RESTORE,
-    ACTION_UNKNOWN,
-    ACTION_CHANGE_TEXT,
-    ACTION_CHANGE_TITLE,
-    KEY_EDIT_TEXT,
-    KEY_EDIT_TITLE,
-    KEY_EDIT,
-    ACTION_ARCHIVE,
-    KEY_ARCHIVE,
-    AUTO_DELETE_DAYS,
-    DATE_FORMAT,
-    ACTION_TYPE,
-)
-from typing import TYPE_CHECKING
-from os import name, system
-from app.models import get_date
+
 from datetime import datetime, timedelta
+from os import name, system
+from typing import TYPE_CHECKING
+
 from prompt_toolkit import prompt
 
+from app.constants import (
+    ACTION_ARCHIVE,
+    ACTION_CHANGE_TEXT,
+    ACTION_CHANGE_TITLE,
+    ACTION_DELETE,
+    ACTION_QUIT,
+    ACTION_RESTORE,
+    ACTION_TYPE,
+    ACTION_UNKNOWN,
+    ANSI_CYAN,
+    ANSI_DIM,
+    ANSI_RED,
+    ANSI_RESET,
+    AUTO_DELETE_DAYS,
+    DATE_FORMAT,
+    KEY_ARCHIVE,
+    KEY_CREATE,
+    KEY_DELETE,
+    KEY_EDIT,
+    KEY_EDIT_TEXT,
+    KEY_EDIT_TITLE,
+    KEY_QUIT,
+    KEY_RESTORE,
+    KEY_SEARCH,
+    KEY_SETTINGS,
+    KEY_TOGGLE_ARCHIVED,
+    SETTING_SHOW_ARCHIVED,
+    UI_PROMPT,
+    UI_SEPARATOR_WIDTH,
+)
+from app.models import get_date, get_local_now
+
 if TYPE_CHECKING:
-    from app.models import Note
     from app.app import NotesApp
+    from app.models import Note
 
 
 def clear_screen() -> None:
@@ -105,7 +108,9 @@ def show_note(note: Note) -> str:
         deleting_at: str
         try:
             deleting_at = get_date(
-                datetime.strptime(note.archived_at, DATE_FORMAT)
+                datetime.strptime(note.archived_at, DATE_FORMAT).replace(
+                    tzinfo=get_local_now().tzinfo
+                )
                 + timedelta(days=AUTO_DELETE_DAYS)
             )
         except ValueError:
@@ -164,7 +169,7 @@ def note_interface(note: Note) -> ACTION_TYPE:
 
 def show_main_menu(app: NotesApp) -> str:
     result: str = ""
-    result += make_red("CliNotes") + ": " + get_date(datetime.now()) + "\n"
+    result += make_red("CliNotes") + ": " + get_date(get_local_now()) + "\n"
     result += "\n"
     result += get_notifications(app)
 

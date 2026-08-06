@@ -1,4 +1,4 @@
-from typing import Literal, Final
+from typing import Final, Literal
 
 # ── ANSI Colors ──────────────────────────
 ANSI_RESET: Final = "\033[0m"

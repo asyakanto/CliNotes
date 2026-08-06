@@ -1,7 +1,8 @@
+import re
 from dataclasses import dataclass
 from datetime import datetime
-from app.constants import TAG_PREFIXES, DEFAULT_ARCHIVED_AT
-import re
+
+from app.constants import DEFAULT_ARCHIVED_AT, TAG_PREFIXES
 
 
 @dataclass
@@ -34,3 +35,7 @@ def get_tags(text: str) -> list[str]:
                         tags.append(part)
                 break
     return tags
+
+
+def get_local_now() -> datetime:
+    return datetime.now().astimezone()
