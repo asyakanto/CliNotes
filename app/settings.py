@@ -1,17 +1,26 @@
-from typing import Literal
+from typing import Any, Literal
+
+from app.constants import (
+    DATE_FORMAT_MAP,
+    DATE_FORMAT_SETTING,
+    DATE_FORMAT_STORAGE,
+    SEPARATOR_WIDTH,
+    SETTING_SHOW_ARCHIVED,
+)
+from app.models import get_date_format
 
 
 class Settings:
     def __init__(self) -> None:
         self._items: dict[str, Setting] = {
-            "show_archived_notes": Setting(
+            SETTING_SHOW_ARCHIVED: Setting(
                 label="Show archived notes",
                 field_type="bool",
                 default=False,
                 group="display",
                 order=1,
             ),
-            "separator_width": Setting(
+            SEPARATOR_WIDTH: Setting(
                 label="Separator width",
                 field_type="int",
                 default=15,
@@ -20,17 +29,17 @@ class Settings:
                 min_value=5,
                 max_value=40,
             ),
-            "date_format": Setting(
+            DATE_FORMAT_SETTING: Setting(
                 label="Date format",
                 field_type="choice",
                 default="DD-MM-YYYY",
                 group="display",
                 order=3,
-                options=["DD-MM-YYYY", "DD.MM.YYYY", "YYYY-MM-DD", "DD/MM/YYYY"],
+                options=list(DATE_FORMAT_MAP.keys()),
             ),
         }
 
-    def get_value(self, setting_name: str) -> int | str | None | bool:
+    def get_value(self, setting_name: str) -> int | str | bool | None:
         if setting_name in self._items:
             setting: Setting | None = self._items.get(setting_name)
             if setting:
@@ -44,6 +53,26 @@ class Settings:
                 setting.value = value
                 return True
         return False
+
+    def settings_to_dict(self) -> dict[str, Any]:
+        settings_dict: dict[str, Any] = {}
+        for key, item in self._items.items():
+            settings_dict.update({key: item.value})
+        return settings_dict
+
+    def dict_to_settings(self, settings_dict: dict[str, Any]) -> None:
+        for key, value in settings_dict.items():
+            try:
+                if self._items[key].validate(value):
+                    self._items[key].value = value
+            except KeyError:
+                continue
+
+    def date_pattern(self) -> str:
+        value: int | str | None = self.get_value(DATE_FORMAT_SETTING)
+        if not isinstance(value, str):
+            value = DATE_FORMAT_STORAGE
+        return get_date_format(value)
 
 
 class Setting:
@@ -76,24 +105,14 @@ class Setting:
             (self.field_type == "bool" and (value is False or value is True))
             or (
                 self.field_type == "str"
-                and (
-                    self.max_length is None
-                    or type(value) == "str"
-                    and len(value) <= self.max_length
-                )
+                and type(value) == str
+                and (self.max_length is None or len(value) <= self.max_length)
             )
             or (
                 self.field_type == "int"
-                and (
-                    self.min_value is None
-                    or type(value) == "int"
-                    and value >= self.min_value
-                )
-                and (
-                    self.max_value is None
-                    or type(value) == "int"
-                    and value <= self.max_value
-                )
+                and type(value) == int
+                and (self.min_value is None or value >= self.min_value)
+                and (self.max_value is None or value <= self.max_value)
             )
             or (self.field_type == "choice" and (value in self.options))
         )

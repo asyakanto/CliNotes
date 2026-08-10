@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from app.constants import FILE_NOTES, FILE_SETTINGS
+from app.settings import Settings
 
 if TYPE_CHECKING:
     from app.models import Note
@@ -42,20 +43,21 @@ class Storage:
             dump(notes_serialized, file, ensure_ascii=False, indent=2)
             logger.info(f"Saved {len(notes)} notes")
 
-    def load_settings(self) -> dict[str, Any]:
+    def load_settings(self) -> Settings:
         try:
             with open(self.SETTINGS_PATH, encoding="utf-8") as file:
-                setting: dict[str, Any] = load(file)
-                logger.info("Settings loaded")
-                return setting
+                setting_dict: dict[str, Any] = load(file)
+                settings = Settings()
+                settings.dict_to_settings(setting_dict)
+                return settings
         except FileNotFoundError:
             logger.warning("Notes file not found, creating new")
-            return {}
+            return Settings()
         except JSONDecodeError:
             logger.error("JSON corrupted, starting fresh")
-            return {}
+            return Settings()
 
-    def save_settings(self, settings: dict[str, Any]) -> None:
+    def save_settings(self, settings: Settings) -> None:
         with open(self.SETTINGS_PATH, "w", encoding="utf-8") as file:
-            dump(settings, file, ensure_ascii=False, indent=2)
+            dump(settings.settings_to_dict(), file, ensure_ascii=False, indent=2)
             logger.info("Settings updated")

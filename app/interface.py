@@ -20,7 +20,7 @@ from app.constants import (
     ANSI_RED,
     ANSI_RESET,
     AUTO_DELETE_DAYS,
-    DATE_FORMAT,
+    DATE_FORMAT_STORAGE,
     KEY_ARCHIVE,
     KEY_CREATE,
     KEY_DELETE,
@@ -32,9 +32,9 @@ from app.constants import (
     KEY_SEARCH,
     KEY_SETTINGS,
     KEY_TOGGLE_ARCHIVED,
+    SEPARATOR_WIDTH,
     SETTING_SHOW_ARCHIVED,
     UI_PROMPT,
-    UI_SEPARATOR_WIDTH,
 )
 from app.models import get_date, get_local_now
 
@@ -53,7 +53,7 @@ def clear_screen() -> None:
 def open_note(app: NotesApp, note: Note) -> None:
     while True:
         clear_screen()
-        print(show_note(note))
+        print(show_note(note, app))
         action: ACTION_TYPE = note_interface(note)
 
         if action == ACTION_QUIT:
@@ -100,18 +100,22 @@ def display_notes(notes: list[Note], display_archive: bool = False) -> str:
     return "\n".join(lines) + "\n"
 
 
-def show_note(note: Note) -> str:
+def show_note(note: Note, app: NotesApp) -> str:
     result: str = ""
-    separator: str = "=" * UI_SEPARATOR_WIDTH
+    value: int | None | bool | str = app.settings.get_value(SEPARATOR_WIDTH)
+    if isinstance(value, int):
+        separator: str = "=" * int(value)
     result += separator + " " + make_cyan(note.title) + " " + separator + "\n"
     if note.archived:
         deleting_at: str
         try:
             deleting_at = get_date(
-                datetime.strptime(note.archived_at, DATE_FORMAT).replace(
-                    tzinfo=get_local_now().tzinfo
-                )
-                + timedelta(days=AUTO_DELETE_DAYS)
+                datetime.strptime(
+                    note.archived_at,
+                    DATE_FORMAT_STORAGE,
+                ).replace(tzinfo=get_local_now().tzinfo)
+                + timedelta(days=AUTO_DELETE_DAYS),
+                app.settings.date_pattern(),
             )
         except ValueError:
             deleting_at = "unknown date"
@@ -169,12 +173,21 @@ def note_interface(note: Note) -> ACTION_TYPE:
 
 def show_main_menu(app: NotesApp) -> str:
     result: str = ""
-    result += make_red("CliNotes") + ": " + get_date(get_local_now()) + "\n"
+    result += (
+        make_red("CliNotes")
+        + ": "
+        + get_date(
+            get_local_now(),
+            app.settings.date_pattern(),
+        )
+        + "\n"
+    )
     result += "\n"
     result += get_notifications(app)
 
     result += (
-        display_notes(app.notes, app.settings.get(SETTING_SHOW_ARCHIVED, False)) + "\n"
+        display_notes(app.notes, bool(app.settings.get_value(SETTING_SHOW_ARCHIVED)))
+        + "\n"
     )
 
     result += make_cyan(

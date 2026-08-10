@@ -2,7 +2,7 @@ import re
 from dataclasses import dataclass
 from datetime import datetime
 
-from app.constants import DEFAULT_ARCHIVED_AT, TAG_PREFIXES
+from app.constants import DATE_FORMAT_MAP, DEFAULT_ARCHIVED_AT, TAG_PREFIXES
 
 
 @dataclass
@@ -16,8 +16,8 @@ class Note:
     archived_at: str = DEFAULT_ARCHIVED_AT
 
 
-def get_date(dt: datetime) -> str:
-    return f"{dt.day:02d}-{dt.month:02d}-{dt.year}"
+def get_date(dt: datetime, date_format: str) -> str:
+    return dt.strftime(date_format)
 
 
 _PATTERN: str = "|".join(map(re.escape, TAG_PREFIXES))
@@ -39,3 +39,11 @@ def get_tags(text: str) -> list[str]:
 
 def get_local_now() -> datetime:
     return datetime.now().astimezone()
+
+
+def get_date_format(display_key: str) -> str:
+    try:
+        date_format = DATE_FORMAT_MAP[display_key]
+    except KeyError:
+        date_format = "%d-%m-%Y"
+    return date_format

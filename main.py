@@ -103,12 +103,9 @@ def main() -> None:
                             if found_note in results:
                                 open_note(app, found_note)
             elif mode == KEY_TOGGLE_ARCHIVED:
-                app.settings.update(
-                    {
-                        SETTING_SHOW_ARCHIVED: not app.settings.get(
-                            SETTING_SHOW_ARCHIVED, False
-                        )
-                    }
+                app.settings.set_value(
+                    SETTING_SHOW_ARCHIVED,
+                    not app.settings.get_value(SETTING_SHOW_ARCHIVED),
                 )
                 app.storage.save_settings(app.settings)
             elif mode == KEY_SETTINGS:

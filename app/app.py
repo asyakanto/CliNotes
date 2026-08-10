@@ -3,13 +3,14 @@ from datetime import datetime
 
 from app.constants import (
     AUTO_DELETE_DAYS,
-    DATE_FORMAT,
+    DATE_FORMAT_STORAGE,
     DEFAULT_ARCHIVED_AT,
     DEFAULT_TEXT,
     NO_NOTES_MAX_ID,
 )
 from app.models import Note, get_date, get_local_now, get_tags
 from app.search import apply_filters, parse_query
+from app.settings import Settings
 from app.storage import Storage
 
 logger = logging.getLogger(__name__)
@@ -18,11 +19,12 @@ logger = logging.getLogger(__name__)
 class NotesApp:
     notes: list[Note]
     max_id: int
-    settings: dict
+    settings: Settings
     storage: Storage
 
     def __init__(self) -> None:
         self.storage = Storage()
+        self.settings = self.storage.load_settings()
 
         raw_notes = self.storage.load()
         self.notes = [Note(**n) for n in raw_notes]
@@ -32,8 +34,6 @@ class NotesApp:
         self._notifications: list[str] = []
         self.notes = self._fix_invalid_ids()
         self.notes = self._delete_archived_notes()
-
-        self.settings = self.storage.load_settings()
 
     def _calculate_max_id(self) -> int:
         max_id: int = NO_NOTES_MAX_ID
@@ -65,9 +65,10 @@ class NotesApp:
                 try:
                     if (
                         current_date
-                        - datetime.strptime(note.archived_at, DATE_FORMAT).replace(
-                            tzinfo=get_local_now().tzinfo
-                        )
+                        - datetime.strptime(
+                            note.archived_at,
+                            DATE_FORMAT_STORAGE,
+                        ).replace(tzinfo=get_local_now().tzinfo)
                     ).days > AUTO_DELETE_DAYS:
                         to_delete.append(note)
                 except ValueError:
@@ -86,7 +87,7 @@ class NotesApp:
             text = DEFAULT_TEXT
         self.max_id += 1
         tags: list[str] = get_tags(text)
-        created: str = get_date(get_local_now())
+        created: str = get_date(get_local_now(), DATE_FORMAT_STORAGE)
         tags.insert(0, created)
         note: Note = Note(
             id=self.max_id, title=title, text=text, tags=tags, created=created
@@ -104,7 +105,7 @@ class NotesApp:
 
     def archive_note(self, note: Note) -> Note:
         note.archived = True
-        note.archived_at = get_date(get_local_now())
+        note.archived_at = get_date(get_local_now(), DATE_FORMAT_STORAGE)
         logger.info(f"Note archived: #{note.id}: {note.title}")
         self.storage.save(self.notes)
         return note

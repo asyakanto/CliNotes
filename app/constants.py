@@ -11,9 +11,6 @@ FILE_NOTES: Final = "notes.json"
 FILE_SETTINGS: Final = "settings.json"
 FILE_LOG: Final = "app.log"
 
-# ── Date ─────────────────────────────────
-DATE_FORMAT: Final = "%d-%m-%Y"
-
 # ── Defaults ─────────────────────────────
 DEFAULT_ARCHIVED_AT: Final = "0"
 DEFAULT_TEXT: Final = "-"
@@ -21,7 +18,6 @@ AUTO_DELETE_DAYS: Final = 30
 
 # ── UI ───────────────────────────────────
 UI_PROMPT: Final = "> "
-UI_SEPARATOR_WIDTH: Final = 15
 
 # ── Keys (главное меню) ─────────────────
 KEY_QUIT: Final = "q"
@@ -50,16 +46,48 @@ ACTION_TYPE = Literal[
     "quit", "archive", "change title", "change text", "restore", "delete", "unknown"
 ]
 
-# ── Settings ─────────────────────────────
-SETTING_SHOW_ARCHIVED: Final = "showArchivedNotes"
-
 # ── Tags ─────────────────────────────────
 TAG_PREFIXES: Final[list[str]] = ["@", "#", "tag:"]
 
 # ── IDs ──────────────────────────────────
 NO_NOTES_MAX_ID: Final = -1
 
+# ── Settings ─────────────────────────────
+SETTING_SHOW_ARCHIVED: Final = "show_archived_notes"
+SEPARATOR_WIDTH: Final = "separator_width"
+DATE_FORMAT_SETTING: Final = "date_format"
 
 # ── Search ─────────────────────────────
 KEY_SEARCH_HELP: Final = "%h"
 KEY_SEARCH_QUIT: Final = "%q"
+
+
+# ── Dates ────────────────────────────────
+DATE_FORMAT_MAP: Final = {
+    "DD-MM-YYYY": "%d-%m-%Y",
+    "DD.MM.YYYY": "%d.%m.%Y",
+    "DD/MM/YYYY": "%d/%m/%Y",
+    "DD MM YYYY": "%d %m %Y",
+    "MM-DD-YYYY": "%m-%d-%Y",
+    "MM.DD.YYYY": "%m.%d.%Y",
+    "MM/DD/YYYY": "%m/%d/%Y",
+    "MM DD YYYY": "%m %d %Y",
+    "YYYY-MM-DD": "%Y-%m-%d",
+    "YYYY.MM.DD": "%Y.%m.%d",
+    "YYYY/MM/DD": "%Y/%m/%d",
+    "YYYY MM DD": "%Y %m %d",
+    "DD-MM-YY": "%d-%m-%y",
+    "DD.MM.YY": "%d.%m.%y",
+    "DD/MM/YY": "%d/%m/%y",
+    "DD MM YY": "%d %m %y",
+    "MM-DD-YY": "%m-%d-%y",
+    "MM.DD.YY": "%m.%d.%y",
+    "MM/DD/YY": "%m/%d/%y",
+    "MM DD YY": "%m %d %y",
+    "YY-MM-DD": "%y-%m-%d",
+    "YY.MM.DD": "%y.%m.%d",
+    "YY/MM/DD": "%y/%m/%d",
+    "YY MM DD": "%y %m %d",
+}
+
+DATE_FORMAT_STORAGE: Final = "%d-%m-%Y"
