@@ -21,6 +21,7 @@ from app.interface import (
     make_cyan,
     make_red,
     open_note,
+    settings_interface,
     show_main_menu,
 )
 from app.models import Note
@@ -107,9 +108,9 @@ def main() -> None:
                     SETTING_SHOW_ARCHIVED,
                     not app.settings.get_value(SETTING_SHOW_ARCHIVED),
                 )
-                app.storage.save_settings(app.settings)
+                app.save_settings()
             elif mode == KEY_SETTINGS:
-                raise NotImplementedError("Settings menu not implemented yet")
+                settings_interface(app)
 
     except KeyboardInterrupt:
         logger.info("Application interrupted by user")

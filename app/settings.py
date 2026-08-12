@@ -4,6 +4,7 @@ from app.constants import (
     DATE_FORMAT_MAP,
     DATE_FORMAT_SETTING,
     DATE_FORMAT_STORAGE,
+    DEFAULT_SEPARATOR_WIDTH,
     SEPARATOR_WIDTH,
     SETTING_SHOW_ARCHIVED,
 )
@@ -12,24 +13,27 @@ from app.models import get_date_format
 
 class Settings:
     def __init__(self) -> None:
-        self._items: dict[str, Setting] = {
-            SETTING_SHOW_ARCHIVED: Setting(
+        definition: list[Setting] = [
+            Setting(
+                key=SETTING_SHOW_ARCHIVED,
                 label="Show archived notes",
                 field_type="bool",
                 default=False,
                 group="display",
                 order=1,
             ),
-            SEPARATOR_WIDTH: Setting(
+            Setting(
+                key=SEPARATOR_WIDTH,
                 label="Separator width",
                 field_type="int",
-                default=15,
+                default=DEFAULT_SEPARATOR_WIDTH,
                 group="display",
                 order=2,
                 min_value=5,
                 max_value=40,
             ),
-            DATE_FORMAT_SETTING: Setting(
+            Setting(
+                key=DATE_FORMAT_SETTING,
                 label="Date format",
                 field_type="choice",
                 default="DD-MM-YYYY",
@@ -37,7 +41,8 @@ class Settings:
                 order=3,
                 options=list(DATE_FORMAT_MAP.keys()),
             ),
-        }
+        ]
+        self._items: dict[str, Setting] = {s.key: s for s in definition}
 
     def get_value(self, setting_name: str) -> int | str | bool | None:
         if setting_name in self._items:
@@ -74,10 +79,20 @@ class Settings:
             value = DATE_FORMAT_STORAGE
         return get_date_format(value)
 
+    def groups(self) -> list[str]:
+        groups: list[str] = list(dict.fromkeys(x.group for x in self._items.values()))
+        return groups
+
+    def settings_in_group(self, group: str) -> list[Setting]:
+        settings: list[Setting] = [x for x in self._items.values() if x.group == group]
+        settings = sorted(settings, key=lambda x: x.order)
+        return settings
+
 
 class Setting:
     def __init__(
         self,
+        key: str,
         label: str,
         field_type: Literal["int", "bool", "str", "choice"],
         default: int | bool | str,
@@ -89,6 +104,7 @@ class Setting:
         max_length: int | None = None,
         value: int | bool | str | None = None,
     ) -> None:
+        self.key = key
         self.label = label
         self.field_type = field_type
         self.value = value if value is not None else default

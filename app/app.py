@@ -152,3 +152,6 @@ class NotesApp:
         notifications: list[str] = self._notifications
         self._notifications = []
         return notifications
+
+    def save_settings(self) -> None:
+        self.storage.save_settings(self.settings)

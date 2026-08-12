@@ -15,12 +15,13 @@ FILE_LOG: Final = "app.log"
 DEFAULT_ARCHIVED_AT: Final = "0"
 DEFAULT_TEXT: Final = "-"
 AUTO_DELETE_DAYS: Final = 30
+DEFAULT_SEPARATOR_WIDTH: Final = 15
 
 # ── UI ───────────────────────────────────
 UI_PROMPT: Final = "> "
 
 # ── Keys (главное меню) ─────────────────
-KEY_QUIT: Final = "q"
+KEY_QUIT: Final = "%q"
 KEY_CREATE: Final = "c"
 KEY_SEARCH: Final = "s"
 KEY_TOGGLE_ARCHIVED: Final = "t"
@@ -52,7 +53,6 @@ TAG_PREFIXES: Final[list[str]] = ["@", "#", "tag:"]
 # ── IDs ──────────────────────────────────
 NO_NOTES_MAX_ID: Final = -1
 
-# ── Settings ─────────────────────────────
 SETTING_SHOW_ARCHIVED: Final = "show_archived_notes"
 SEPARATOR_WIDTH: Final = "separator_width"
 DATE_FORMAT_SETTING: Final = "date_format"

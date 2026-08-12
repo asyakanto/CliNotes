@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timedelta
 from os import name, system
 from typing import TYPE_CHECKING
@@ -21,6 +22,7 @@ from app.constants import (
     ANSI_RESET,
     AUTO_DELETE_DAYS,
     DATE_FORMAT_STORAGE,
+    DEFAULT_SEPARATOR_WIDTH,
     KEY_ARCHIVE,
     KEY_CREATE,
     KEY_DELETE,
@@ -30,6 +32,7 @@ from app.constants import (
     KEY_QUIT,
     KEY_RESTORE,
     KEY_SEARCH,
+    KEY_SEARCH_QUIT,
     KEY_SETTINGS,
     KEY_TOGGLE_ARCHIVED,
     SEPARATOR_WIDTH,
@@ -41,6 +44,9 @@ from app.models import get_date, get_local_now
 if TYPE_CHECKING:
     from app.app import NotesApp
     from app.models import Note
+    from app.settings import Setting
+
+logger = logging.getLogger(__name__)
 
 
 def clear_screen() -> None:
@@ -102,10 +108,7 @@ def display_notes(notes: list[Note], display_archive: bool = False) -> str:
 
 def show_note(note: Note, app: NotesApp) -> str:
     result: str = ""
-    value: int | None | bool | str = app.settings.get_value(SEPARATOR_WIDTH)
-    if isinstance(value, int):
-        separator: str = "=" * int(value)
-    result += separator + " " + make_cyan(note.title) + " " + separator + "\n"
+    result += get_separator(app, note.title)
     if note.archived:
         deleting_at: str
         try:
@@ -215,3 +218,150 @@ def get_notifications(app: NotesApp) -> str:
     for notification in app.pop_notifications():
         result += make_red("[!] " + notification + "\n")
     return result + "\n"
+
+
+def show_settings_categories(app: NotesApp) -> str:
+    result: str = ""
+    result += get_separator(app, "Settings")
+    groups: list[str] = app.settings.groups()
+    for i, group in enumerate(groups):
+        result += f"{i} - {group}\n"
+    result += make_cyan("Actions: {ID} - open category; " + f"{KEY_SEARCH_QUIT} - quit")
+    return result
+
+
+def settings_interface(app: NotesApp) -> None:
+    groups = app.settings.groups()
+    while True:
+        clear_screen()
+        print(show_settings_categories(app))
+        action: str = input(UI_PROMPT).strip().lower()
+        if action == KEY_SEARCH_QUIT:
+            return
+        elif action.isdigit() and "." not in action:
+            if 0 <= int(action) < len(groups):
+                settings_group_interface(app, groups[int(action)])
+            else:
+                input(make_red("wrong ID"))
+
+        else:
+            input(make_red("wrong action"))
+
+
+def show_settings_group(
+    app: NotesApp, group_name: str, group_settings: list[Setting]
+) -> str:
+    result = ""
+    result += get_separator(app, group_name)
+    for i, setting in enumerate(group_settings):
+        value: str = ""
+        if type(setting.value) == bool:
+            if setting.value:
+                value = "on"
+            else:
+                value = "off"
+        else:
+            value = str(setting.value)
+        result += str(i) + " " + setting.label + " " + make_cyan(value) + "\n"
+    result += make_cyan(
+        "Actions: {ID} - change setting; " + f"{KEY_SEARCH_QUIT} - quit"
+    )
+    return result
+
+
+def settings_group_interface(app: NotesApp, group: str) -> None:
+    group_settings: list[Setting] = app.settings.settings_in_group(group)
+    while True:
+        clear_screen()
+        print(show_settings_group(app, group, group_settings))
+        action: str = input(UI_PROMPT).strip().lower()
+        if action == KEY_SEARCH_QUIT:
+            app.save_settings()
+            logger.info("Settings changed and saved successfully")
+            return
+        elif action.isdigit() and "." not in action:
+            if 0 <= int(action) < len(group_settings):
+                edit_setting(app, group_settings[int(action)])
+            else:
+                input(make_red("wrong ID"))
+
+        else:
+            input(make_red("wrong action"))
+
+
+def edit_setting(app: NotesApp, setting: Setting) -> None:
+    field_type: str = setting.field_type
+    clue: str = ""
+    value: str
+    match field_type:
+        case "bool":
+            app.settings.set_value(setting.key, not app.settings.get_value(setting.key))
+        case "int":
+            min_value: int | None = setting.min_value
+            max_value: int | None = setting.max_value
+            if min_value is None and max_value is None:
+                clue = "Enter any number:"
+            else:
+                clue += "Range: "
+                if min_value is not None:
+                    clue += str(min_value)
+                clue += ".."
+                if max_value is not None:
+                    clue += str(max_value)
+                clue += ":"
+            print(make_cyan(clue))
+            value = input(UI_PROMPT).strip()
+            if value == "%q":
+                return
+            elif value.isdigit() and "." not in value:
+                edited: bool = app.settings.set_value(setting.key, int(value))
+                if not edited:
+                    clue = ""
+                    if min_value is not None:
+                        clue += str(min_value)
+                    clue += ".."
+                    if max_value is not None:
+                        clue += str(max_value)
+                    input(make_red(f"number is not in range {clue}"))
+
+            else:
+                input(make_red("not a number"))
+        case "str":
+            max_length: int | None = setting.max_length
+            if max_length is not None:
+                clue = f"Enter a text (max length is {max_length} characters):"
+            else:
+                clue = "Enter a text:"
+            print(make_cyan(clue))
+            value = input(UI_PROMPT).strip()
+            if value == "%q":
+                return
+            edited_str: bool = app.settings.set_value(setting.key, value)
+            if not edited_str:
+                input(f"Text length is over than {max_length} characters")
+        case "choice":
+            result: str = ""
+            choices = [choice for choice in setting.options]
+            for i, choice in enumerate(choices):
+                result += f"{i} {choice}\n"
+            result += make_cyan("choose option ID:")
+            print(result)
+            value = input(UI_PROMPT).strip()
+            if value == "%q":
+                return
+            elif (
+                value.isdigit() and "." not in value and 0 <= int(value) < len(choices)
+            ):
+                app.settings.set_value(setting.key, choices[int(value)])
+            else:
+                input(make_red("Wrong ID"))
+
+
+def get_separator(app: NotesApp, text: str) -> str:
+    sep: int | None | bool | str = app.settings.get_value(SEPARATOR_WIDTH)
+    separator: str
+    if isinstance(sep, int):
+        separator = "=" * int(sep)
+    else:
+        separator = "=" * DEFAULT_SEPARATOR_WIDTH
+    return separator + " " + make_cyan(text) + " " + separator + "\n"
