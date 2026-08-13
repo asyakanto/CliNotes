@@ -1,4 +1,4 @@
-from app.constants import KEY_SEARCH_QUIT, TAG_PREFIXES
+from app.constants import Constants as C
 from app.models import Note
 
 
@@ -43,7 +43,7 @@ def parse_query(query: str) -> list[tuple[str, str]]:
 
     for part in raw_parts:
         is_tag: bool = False
-        for prefix in TAG_PREFIXES:
+        for prefix in C.TAG_PREFIXES:
             if part.strip().startswith(prefix):
                 filters.append(("tag", part.removeprefix(prefix).strip()))
                 is_tag = True
@@ -117,5 +117,5 @@ def search_help() -> str:
 │ Combine filters with spaces: AND logic     │
 │ Example: @work title:"meeting notes"       │
 │                                            │
-│ {KEY_SEARCH_QUIT}             — quit search               │
+│ {C.KEY_SEARCH_QUIT}             — quit search               │
 ╰────────────────────────────────────────────╯"""

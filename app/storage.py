@@ -6,7 +6,7 @@ from json import JSONDecodeError, dump, load
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from app.constants import FILE_NOTES, FILE_SETTINGS
+from app.constants import Constants as C
 from app.settings import Settings
 
 if TYPE_CHECKING:
@@ -20,8 +20,8 @@ class Storage:
     SETTINGS_PATH: Path
 
     def __init__(self) -> None:
-        self.JSON_PATH = Path(__file__).parent.parent / FILE_NOTES
-        self.SETTINGS_PATH = Path(__file__).parent.parent / FILE_SETTINGS
+        self.JSON_PATH = Path(__file__).parent.parent / C.FILE_NOTES
+        self.SETTINGS_PATH = Path(__file__).parent.parent / C.FILE_SETTINGS
 
     def load(self) -> list[dict[str, Any]]:
         try:

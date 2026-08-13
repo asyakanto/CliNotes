@@ -1,13 +1,7 @@
 import logging
 from datetime import datetime
 
-from app.constants import (
-    AUTO_DELETE_DAYS,
-    DATE_FORMAT_STORAGE,
-    DEFAULT_ARCHIVED_AT,
-    DEFAULT_TEXT,
-    NO_NOTES_MAX_ID,
-)
+from app.constants import Constants as C
 from app.models import Note, get_date, get_local_now, get_tags
 from app.search import apply_filters, parse_query
 from app.settings import Settings
@@ -36,7 +30,7 @@ class NotesApp:
         self.notes = self._delete_archived_notes()
 
     def _calculate_max_id(self) -> int:
-        max_id: int = NO_NOTES_MAX_ID
+        max_id: int = C.NO_NOTES_MAX_ID
         for note in self.notes:
             if note.id is not None and note.id > max_id and "." not in str(note.id):
                 max_id = note.id
@@ -52,7 +46,12 @@ class NotesApp:
                 duplicates_found += 1
             ids.add(note.id)
         if duplicates_found:
-            logger.warning(f"Fixed {duplicates_found} invalid ID")
+            self.add_notification(
+                f"Fixed {duplicates_found} invalid {'IDs' if duplicates_found != 1 and duplicates_found != 0 else 'ID'}"
+            )
+            logger.warning(
+                f"Fixed {duplicates_found} invalid {'IDs' if duplicates_found != 1 and duplicates_found != 0 else 'ID'}"
+            )
             self.storage.save(self.notes)
         return self.notes
 
@@ -61,15 +60,15 @@ class NotesApp:
         to_delete: list[Note] = []
         notes_before_deleting: int = len(self.notes)
         for note in self.notes:
-            if note.archived_at != DEFAULT_ARCHIVED_AT and note.archived:
+            if note.archived_at != C.DEFAULT_ARCHIVED_AT and note.archived:
                 try:
                     if (
                         current_date
                         - datetime.strptime(
                             note.archived_at,
-                            DATE_FORMAT_STORAGE,
+                            C.DATE_FORMAT_STORAGE,
                         ).replace(tzinfo=get_local_now().tzinfo)
-                    ).days > AUTO_DELETE_DAYS:
+                    ).days > C.AUTO_DELETE_DAYS:
                         to_delete.append(note)
                 except ValueError:
                     continue
@@ -77,17 +76,18 @@ class NotesApp:
             self.delete_note(note)
         notes_after_deleting: int = len(self.notes)
         if notes_after_deleting != notes_before_deleting:
+            deleted: int = notes_before_deleting - notes_after_deleting
             self.add_notification(
-                f"Deleted {notes_before_deleting - notes_after_deleting} expired notes"
+                f"Deleted {deleted} expired {'notes' if (deleted != 1 and deleted != 0) else 'note'}"
             )
         return self.notes
 
     def create_note(self, title: str, text: str) -> Note:
         if not text.strip():
-            text = DEFAULT_TEXT
+            text = C.DEFAULT_TEXT
         self.max_id += 1
         tags: list[str] = get_tags(text)
-        created: str = get_date(get_local_now(), DATE_FORMAT_STORAGE)
+        created: str = get_date(get_local_now(), C.DATE_FORMAT_STORAGE)
         tags.insert(0, created)
         note: Note = Note(
             id=self.max_id, title=title, text=text, tags=tags, created=created
@@ -105,7 +105,7 @@ class NotesApp:
 
     def archive_note(self, note: Note) -> Note:
         note.archived = True
-        note.archived_at = get_date(get_local_now(), DATE_FORMAT_STORAGE)
+        note.archived_at = get_date(get_local_now(), C.DATE_FORMAT_STORAGE)
         logger.info(f"Note archived: #{note.id}: {note.title}")
         self.storage.save(self.notes)
         return note
@@ -128,14 +128,14 @@ class NotesApp:
                 note.tags = tags
                 note.text = new_text
             else:
-                note.text = DEFAULT_TEXT
+                note.text = C.DEFAULT_TEXT
                 note.tags = [note.created]
         self.storage.save(self.notes)
         return note
 
     def restore_note(self, note: Note) -> Note:
         note.archived = False
-        note.archived_at = DEFAULT_ARCHIVED_AT
+        note.archived_at = C.DEFAULT_ARCHIVED_AT
         self.storage.save(self.notes)
         return note
 

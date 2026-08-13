@@ -2,7 +2,7 @@ import re
 from dataclasses import dataclass
 from datetime import datetime
 
-from app.constants import DATE_FORMAT_MAP, DEFAULT_ARCHIVED_AT, TAG_PREFIXES
+from app.constants import Constants as C
 
 
 @dataclass
@@ -13,20 +13,20 @@ class Note:
     created: str
     id: int | None = None
     archived: bool = False
-    archived_at: str = DEFAULT_ARCHIVED_AT
+    archived_at: str = C.DEFAULT_ARCHIVED_AT
 
 
 def get_date(dt: datetime, date_format: str) -> str:
     return dt.strftime(date_format)
 
 
-_PATTERN: str = "|".join(map(re.escape, TAG_PREFIXES))
+_PATTERN: str = "|".join(map(re.escape, C.TAG_PREFIXES))
 
 
 def get_tags(text: str) -> list[str]:
     tags: list[str] = []
     for word in text.split():
-        for prefix in TAG_PREFIXES:
+        for prefix in C.TAG_PREFIXES:
             if word.startswith(prefix):
                 rest: str = word[len(prefix) :]
                 parts: list[str] = re.split(_PATTERN, rest)
@@ -43,7 +43,7 @@ def get_local_now() -> datetime:
 
 def get_date_format(display_key: str) -> str:
     try:
-        date_format = DATE_FORMAT_MAP[display_key]
+        date_format = C.DATE_FORMAT_MAP[display_key]
     except KeyError:
         date_format = "%d-%m-%Y"
     return date_format

@@ -1,13 +1,6 @@
 from typing import Any, Literal
 
-from app.constants import (
-    DATE_FORMAT_MAP,
-    DATE_FORMAT_SETTING,
-    DATE_FORMAT_STORAGE,
-    DEFAULT_SEPARATOR_WIDTH,
-    SEPARATOR_WIDTH,
-    SETTING_SHOW_ARCHIVED,
-)
+from app.constants import Constants as C
 from app.models import get_date_format
 
 
@@ -15,7 +8,7 @@ class Settings:
     def __init__(self) -> None:
         definition: list[Setting] = [
             Setting(
-                key=SETTING_SHOW_ARCHIVED,
+                key=C.SETTING_SHOW_ARCHIVED,
                 label="Show archived notes",
                 field_type="bool",
                 default=False,
@@ -23,23 +16,13 @@ class Settings:
                 order=1,
             ),
             Setting(
-                key=SEPARATOR_WIDTH,
-                label="Separator width",
-                field_type="int",
-                default=DEFAULT_SEPARATOR_WIDTH,
-                group="display",
-                order=2,
-                min_value=5,
-                max_value=40,
-            ),
-            Setting(
-                key=DATE_FORMAT_SETTING,
+                key=C.DATE_FORMAT_SETTING,
                 label="Date format",
                 field_type="choice",
                 default="DD-MM-YYYY",
                 group="display",
                 order=3,
-                options=list(DATE_FORMAT_MAP.keys()),
+                options=list(C.DATE_FORMAT_MAP.keys()),
             ),
         ]
         self._items: dict[str, Setting] = {s.key: s for s in definition}
@@ -74,9 +57,9 @@ class Settings:
                 continue
 
     def date_pattern(self) -> str:
-        value: int | str | None = self.get_value(DATE_FORMAT_SETTING)
+        value: int | str | None = self.get_value(C.DATE_FORMAT_SETTING)
         if not isinstance(value, str):
-            value = DATE_FORMAT_STORAGE
+            value = C.DATE_FORMAT_STORAGE
         return get_date_format(value)
 
     def groups(self) -> list[str]:
