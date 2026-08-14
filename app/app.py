@@ -68,7 +68,7 @@ class NotesApp:
                             note.archived_at,
                             C.DATE_FORMAT_STORAGE,
                         ).replace(tzinfo=get_local_now().tzinfo)
-                    ).days > C.AUTO_DELETE_DAYS:
+                    ).days > self.settings.get_int_value(C.SETTING_AUTO_DELETE_DAYS):
                         to_delete.append(note)
                 except ValueError:
                     continue

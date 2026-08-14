@@ -57,7 +57,7 @@ def main() -> None:
             elif mode == C.KEY_TOGGLE_ARCHIVED:
                 app.settings.set_value(
                     C.SETTING_SHOW_ARCHIVED,
-                    not app.settings.get_value(C.SETTING_SHOW_ARCHIVED),
+                    not app.settings.get_bool_value(C.SETTING_SHOW_ARCHIVED),
                 )
                 app.save_settings()
             elif mode == C.KEY_SETTINGS:

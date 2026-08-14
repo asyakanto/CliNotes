@@ -16,7 +16,6 @@ class Constants:
     # ── Defaults ─────────────────────────────
     DEFAULT_ARCHIVED_AT: Final = "0"
     DEFAULT_TEXT: Final = "-"
-    AUTO_DELETE_DAYS: Final = 30
     DEFAULT_TERMINAL_WIDTH: Final = 80
 
     # ── UI ───────────────────────────────────
@@ -55,8 +54,11 @@ class Constants:
     # ── IDs ──────────────────────────────────
     NO_NOTES_MAX_ID: Final = -1
 
+    # ── Settings ─────────────────────────────
+
     SETTING_SHOW_ARCHIVED: Final = "show_archived_notes"
     DATE_FORMAT_SETTING: Final = "date_format"
+    SETTING_AUTO_DELETE_DAYS: Final = "auto_delete_days"
 
     # ── Search ─────────────────────────────
     KEY_SEARCH_HELP: Final = "%h"

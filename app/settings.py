@@ -24,6 +24,15 @@ class Settings:
                 order=3,
                 options=list(C.DATE_FORMAT_MAP.keys()),
             ),
+            Setting(
+                key=C.SETTING_AUTO_DELETE_DAYS,
+                label="Days before auto deleting archived notes",
+                field_type="int",
+                default=30,
+                group="archiving/deleting",
+                order=1,
+                min_value=1,
+            ),
         ]
         self._items: dict[str, Setting] = {s.key: s for s in definition}
 
@@ -33,6 +42,33 @@ class Settings:
             if setting:
                 return setting.value if setting.value is not None else setting.default
         return None
+
+    def get_bool_value(self, setting_name: str) -> bool:
+        value = self.get_value(setting_name)
+        if isinstance(value, bool):
+            return value
+        setting = self._items.get(setting_name)
+        if setting is not None and isinstance(setting.default, bool):
+            return setting.default
+        return True
+
+    def get_int_value(self, setting_name: str) -> int:
+        value = self.get_value(setting_name)
+        if isinstance(value, int):
+            return value
+        setting = self._items.get(setting_name)
+        if setting is not None and isinstance(setting.default, int):
+            return setting.default
+        return 1
+
+    def get_str_value(self, setting_name: str) -> str:
+        value = self.get_value(setting_name)
+        if isinstance(value, str):
+            return value
+        setting = self._items.get(setting_name)
+        if setting is not None and isinstance(setting.default, str):
+            return setting.default
+        return ""
 
     def set_value(self, setting_name: str, value: bool | str | int) -> bool:
         if setting_name in self._items:

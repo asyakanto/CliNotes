@@ -82,7 +82,9 @@ def show_note(note: Note, app: NotesApp) -> str:
                     note.archived_at,
                     C.DATE_FORMAT_STORAGE,
                 ).replace(tzinfo=get_local_now().tzinfo)
-                + timedelta(days=C.AUTO_DELETE_DAYS),
+                + timedelta(
+                    days=app.settings.get_int_value(C.SETTING_AUTO_DELETE_DAYS)
+                ),
                 app.settings.date_pattern(),
             )
         except ValueError:
@@ -159,7 +161,7 @@ def display_notes(notes: list[Note]) -> str:
 def show_main_menu(app: NotesApp) -> str:
     result: str = ""
     visible_notes: list[Note] = get_visible_notes(
-        app.notes, bool(app.settings.get_value(C.SETTING_SHOW_ARCHIVED))
+        app.notes, app.settings.get_bool_value(C.SETTING_SHOW_ARCHIVED)
     )
     result += get_header(
         f"CliNotes: {get_date(get_local_now(), app.settings.date_pattern())} · {len(visible_notes)} {'notes' if len(visible_notes) != 1 and len(visible_notes) != 0 else 'note'}"
@@ -241,7 +243,7 @@ def show_settings_group(
                 value = "off"
         else:
             value = str(setting.value)
-        result += str(i) + " " + setting.label + " " + make_cyan(value) + "\n"
+        result += str(i) + " - " + setting.label + " - " + make_cyan(value) + "\n"
     result += "\n" + make_cyan(
         "Actions: {ID} - change setting; " + f"{C.KEY_SEARCH_QUIT} - quit"
     )
@@ -274,7 +276,9 @@ def edit_setting(app: NotesApp, setting: Setting) -> None:
     value: str
     match field_type:
         case "bool":
-            app.settings.set_value(setting.key, not app.settings.get_value(setting.key))
+            app.settings.set_value(
+                setting.key, not app.settings.get_bool_value(setting.key)
+            )
         case "int":
             min_value: int | None = setting.min_value
             max_value: int | None = setting.max_value
