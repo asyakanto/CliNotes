@@ -9,6 +9,9 @@ from app.interface import (
     display_main_menu,
     open_note,
     search_scenario,
+    set_clear_screen_enabled,
+    set_colors_enabled,
+    set_hints_enabled,
     settings_interface,
     show_fatal_error,
 )
@@ -35,6 +38,11 @@ def main() -> None:
 
     try:
         app: NotesApp = NotesApp()
+        set_colors_enabled(app.settings.get_bool_value(C.SETTING_USE_COLORS))
+        set_clear_screen_enabled(
+            app.settings.get_bool_value(C.SETTING_USE_CLEAR_SCREEN)
+        )
+        set_hints_enabled(app.settings.get_bool_value(C.SETTING_USE_HINTS))
         logger.info("Application started")
         while True:
             mode: str = display_main_menu(app)

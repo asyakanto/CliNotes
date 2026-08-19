@@ -15,7 +15,6 @@ class Constants:
 
     # ── Defaults ─────────────────────────────
     DEFAULT_ARCHIVED_AT: Final = "0"
-    DEFAULT_TEXT: Final = "-"
     DEFAULT_TERMINAL_WIDTH: Final = 80
 
     # ── UI ───────────────────────────────────
@@ -77,6 +76,10 @@ class Constants:
         SETTING_USE_AMPERSAND: "&",
         SETTING_USE_PERCENT: "%",
     }
+    SETTING_DEFAULT_TEXT: Final = "default_text"
+    SETTING_USE_COLORS: Final = "use_colors"
+    SETTING_USE_CLEAR_SCREEN: Final = "use_clear_screen"
+    SETTING_USE_HINTS: Final = "use_hints"
 
     # ── Search ─────────────────────────────
     KEY_SEARCH_HELP: Final = "%h"

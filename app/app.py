@@ -84,7 +84,7 @@ class NotesApp:
 
     def create_note(self, title: str, text: str) -> Note:
         if not text.strip():
-            text = C.DEFAULT_TEXT
+            text = self.settings.get_str_value(C.SETTING_DEFAULT_TEXT)
         self.max_id += 1
         tags: list[str] = get_tags(text, self.settings.active_tag_prefixes())
         created: str = get_date(get_local_now(), C.DATE_FORMAT_STORAGE)
@@ -132,7 +132,7 @@ class NotesApp:
                 note.tags = tags
                 note.text = new_text
             else:
-                note.text = C.DEFAULT_TEXT
+                note.text = self.settings.get_str_value(C.SETTING_DEFAULT_TEXT)
                 note.tags = (
                     [note.created]
                     if self.settings.get_bool_value(C.SETTING_AUTO_DATE_TAG)

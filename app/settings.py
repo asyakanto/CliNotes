@@ -59,6 +59,14 @@ class Settings:
                 order=1,
             ),
             Setting(
+                key=C.SETTING_DEFAULT_TEXT,
+                label="Default text for empty note",
+                field_type="str",
+                default="-",
+                group="creating a note",
+                order=2,
+            ),
+            Setting(
                 key=C.SETTING_USE_AT,
                 label=f"Use {make_cyan(C.TAG_PREFIX_SETTINGS[C.SETTING_USE_AT])} tag prefix",
                 field_type="bool",
@@ -121,6 +129,30 @@ class Settings:
                 default=False,
                 group="creating a note",
                 order=10,
+            ),
+            Setting(
+                key=C.SETTING_USE_COLORS,
+                label="Colored output",
+                field_type="bool",
+                default=True,
+                group="interface",
+                order=1,
+            ),
+            Setting(
+                key=C.SETTING_USE_CLEAR_SCREEN,
+                label="Clear screen",
+                field_type="bool",
+                default=True,
+                group="interface",
+                order=2,
+            ),
+            Setting(
+                key=C.SETTING_USE_HINTS,
+                label="Show hints",
+                field_type="bool",
+                default=True,
+                group="interface",
+                order=3,
             ),
         ]
         self._items: dict[str, Setting] = {s.key: s for s in definition}

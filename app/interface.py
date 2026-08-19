@@ -18,8 +18,29 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+_COLORS_ENABLED: bool = True
+_CLEAR_SCREEN_ENABLED: bool = True
+_HINTS_ENABLED: bool = True
+
+
+def set_colors_enabled(enabled: bool) -> None:
+    global _COLORS_ENABLED
+    _COLORS_ENABLED = enabled
+
+
+def set_clear_screen_enabled(enabled: bool) -> None:
+    global _CLEAR_SCREEN_ENABLED
+    _CLEAR_SCREEN_ENABLED = enabled
+
+
+def set_hints_enabled(enabled: bool) -> None:
+    global _HINTS_ENABLED
+    _HINTS_ENABLED = enabled
+
 
 def clear_screen() -> None:
+    if not _CLEAR_SCREEN_ENABLED:
+        return
     if name == "nt":
         system("cls")
     else:
@@ -69,20 +90,26 @@ def open_note(app: NotesApp, note: Note) -> None:
 
 
 def make_cyan(text: str) -> str:
-    return C.ANSI_CYAN + text + C.ANSI_RESET
+    if _COLORS_ENABLED:
+        return C.ANSI_CYAN + text + C.ANSI_RESET
+    return text
 
 
 def make_muted(text: str) -> str:
-    return C.ANSI_DIM + text + C.ANSI_RESET
+    if _COLORS_ENABLED:
+        return C.ANSI_DIM + text + C.ANSI_RESET
+    return text
 
 
 def make_red(text: str) -> str:
-    return C.ANSI_RED + text + C.ANSI_RESET
+    if _COLORS_ENABLED:
+        return C.ANSI_RED + text + C.ANSI_RESET
+    return text
 
 
 def show_note(note: Note, app: NotesApp) -> str:
-    result: str = ""
-    result += get_header(note.title)
+    header: str = get_header(note.title)
+    body: str = ""
     if note.archived:
         deleting_at: str
         try:
@@ -98,22 +125,20 @@ def show_note(note: Note, app: NotesApp) -> str:
             )
         except ValueError:
             deleting_at = "unknown date"
-        result += make_red(f"ARCHIVED: note will be deleted at {deleting_at}" + "\n")
-    result += make_muted(str(note.id) + " #: " + ", ".join(note.tags)) + "\n"
-    result += "\n"
-    result += note.text + "\n"
-    result += "\n"
-    if not note.archived:
-        result += make_cyan(
+        body += make_red(f"ARCHIVED: note will be deleted at {deleting_at}\n")
+    body += make_muted(str(note.id) + " #: " + ", ".join(note.tags) + "\n\n")
+    body += note.text
+    hints: str = (
+        make_hint(
             f"Choose action: {C.KEY_QUIT} - quit; {C.KEY_ARCHIVE} - archive note; {C.KEY_EDIT} - edit note"
-            + "\n"
         )
-    else:
-        result += make_cyan(
+        if not note.archived
+        else make_hint(
             f"Choose action: {C.KEY_QUIT} - quit; {C.KEY_RESTORE} - restore note; {C.KEY_DELETE} - delete note"
-            + "\n"
         )
-    return result
+    )
+
+    return build_view(header, body, hints)
 
 
 def note_interface(note: Note) -> C.ACTION_TYPE:
@@ -164,30 +189,29 @@ def display_notes(notes: list[Note]) -> str:
                 lines.append(f"#{note.id} {note.title}")
             else:
                 lines.append(make_muted(f"#{note.id} {note.title}"))
-        return "\n".join(lines) + "\n"
-    return make_muted(f"No notes yet — press {C.KEY_CREATE} to create \n")
+        return "\n".join(lines)
+    return make_muted(f"No notes yet — press {C.KEY_CREATE} to create")
 
 
 def show_main_menu(app: NotesApp) -> str:
-    result: str = ""
     visible_notes: list[Note] = get_visible_notes(
         app.notes, app.settings.get_bool_value(C.SETTING_SHOW_ARCHIVED)
     )
-    result += get_header(
+    header: str = get_header(
         f"CliNotes: {get_date(get_local_now(), app.settings.date_pattern())} · {len(visible_notes)} {'notes' if len(visible_notes) != 1 and len(visible_notes) != 0 else 'note'}"
     )
-    result += "\n"
-    result += get_notifications(app)
-
-    result += display_notes(visible_notes) + "\n"
-
-    result += make_cyan(
-        "Actions: {ID}"
-        + f" - open note; {C.KEY_QUIT} - quit; {C.KEY_CREATE} - create; {C.KEY_SEARCH} - search; {C.KEY_TOGGLE_ARCHIVED} - show archived; {C.KEY_SETTINGS} - settings"
-        + "\n"
+    body: str = "\n\n".join(
+        section
+        for section in [get_notifications(app), display_notes(visible_notes)]
+        if section
     )
 
-    return result
+    hints: str = make_hint(
+        "Actions: {ID}"
+        + f" - open note; {C.KEY_QUIT} - quit; {C.KEY_CREATE} - create; {C.KEY_SEARCH} - search; {C.KEY_TOGGLE_ARCHIVED} - show archived; {C.KEY_SETTINGS} - settings"
+    )
+
+    return build_view(header, body, hints)
 
 
 def main_interface() -> str:
@@ -205,20 +229,20 @@ def get_notifications(app: NotesApp) -> str:
 
     for notification in app.pop_notifications():
         result += make_red("[!] " + notification + "\n")
-    return result + "\n"
+    return result
 
 
 def show_settings_categories(app: NotesApp) -> str:
-    result: str = ""
-    result += get_header("Settings") + "\n"
-
-    groups: list[str] = app.settings.groups()
-    for i, group in enumerate(groups):
-        result += f"{i} - {group}\n"
-    result += "\n" + make_cyan(
+    header: str = get_header("Settings")
+    hints: str = make_hint(
         "Actions: {ID} - open category; " + f"{C.KEY_SEARCH_QUIT} - quit"
     )
-    return result
+    lines: list[str] = []
+    for i, group in enumerate(app.settings.groups()):
+        lines.append(f"{i} - {group}")
+    body: str = "\n".join(lines)
+
+    return build_view(header, body, hints)
 
 
 def settings_interface(app: NotesApp) -> None:
@@ -242,8 +266,8 @@ def settings_interface(app: NotesApp) -> None:
 def show_settings_group(
     app: NotesApp, group_name: str, group_settings: list[Setting]
 ) -> str:
-    result = ""
-    result += get_header(group_name) + "\n"
+    header: str = get_header(group_name)
+    lines: list[str] = []
     for i, setting in enumerate(group_settings):
         value: str = ""
         if type(setting.value) == bool:
@@ -253,11 +277,13 @@ def show_settings_group(
                 value = "off"
         else:
             value = str(setting.value)
-        result += str(i) + " - " + setting.label + " - " + make_cyan(value) + "\n"
-    result += "\n" + make_cyan(
+        lines.append(str(i) + " - " + setting.label + " - " + make_cyan(value))
+    body: str = "\n".join(lines)
+    hints: str = make_hint(
         "Actions: {ID} - change setting; " + f"{C.KEY_SEARCH_QUIT} - quit"
     )
-    return result
+
+    return build_view(header, body, hints)
 
 
 def settings_group_interface(app: NotesApp, group: str) -> None:
@@ -289,6 +315,14 @@ def edit_setting(app: NotesApp, setting: Setting) -> None:
             app.settings.set_value(
                 setting.key, not app.settings.get_bool_value(setting.key)
             )
+            if setting.key == C.SETTING_USE_COLORS:
+                set_colors_enabled(app.settings.get_bool_value(C.SETTING_USE_COLORS))
+            if setting.key == C.SETTING_USE_CLEAR_SCREEN:
+                set_clear_screen_enabled(
+                    app.settings.get_bool_value(C.SETTING_USE_CLEAR_SCREEN)
+                )
+            if setting.key == C.SETTING_USE_HINTS:
+                set_hints_enabled(app.settings.get_bool_value(C.SETTING_USE_HINTS))
         case "int":
             min_value: int | None = setting.min_value
             max_value: int | None = setting.max_value
@@ -330,12 +364,15 @@ def edit_setting(app: NotesApp, setting: Setting) -> None:
             if not edited_str:
                 pause(f"Text length is over than {max_length} characters")
         case "choice":
-            result: str = ""
-            choices = [choice for choice in setting.options]
+            clear_screen()
+            lines: list[str] = []
+            choices: list[str | int] = [choice for choice in setting.options]
             for i, choice in enumerate(choices):
-                result += f"{i} {choice}\n"
-            result += make_cyan("choose option ID")
-            print(result)
+                lines.append(f"{i} {choice}")
+            body: str = "\n".join(lines)
+            header: str = get_header(setting.label)
+            hints: str = make_hint("choose option ID")
+            print(build_view(header, body, hints))
             value = read_input(lowercase=False)
             if value == "%q":
                 return
@@ -359,7 +396,6 @@ def get_header(text: str) -> str:
         + make_cyan(text)
         + " "
         + "=" * (padding - padding // 2)
-        + "\n"
     )
 
 
@@ -443,10 +479,7 @@ def prompt_input(
     prompt_default_text: str | None = None,
     danger: bool = False,
 ) -> str:
-    if danger:
-        print(make_red(hint))
-    else:
-        print(make_cyan(hint))
+    print(make_hint(hint, danger=danger))
     return read_input(lowercase=lowercase, prompt_default_text=prompt_default_text)
 
 
@@ -494,3 +527,16 @@ def search_help(prefixes: list[str]) -> str:
         f'{prefixes[0] + "work " if len(prefixes) else ""}text:"123 123" title:"meeting notes"'
     )
     return make_box(lines, "Search help")
+
+
+def make_hint(text: str, danger: bool = False) -> str:
+    if _HINTS_ENABLED:
+        return make_red(text) if danger else make_cyan(text)
+    return ""
+
+
+def build_view(header: str, body: str, hint: str) -> str:
+    parts = [header, body]
+    if hint:
+        parts.append(hint)
+    return "\n\n".join(part for part in parts if part) + "\n"
