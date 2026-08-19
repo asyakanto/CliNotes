@@ -86,9 +86,10 @@ class NotesApp:
         if not text.strip():
             text = C.DEFAULT_TEXT
         self.max_id += 1
-        tags: list[str] = get_tags(text)
+        tags: list[str] = get_tags(text, self.settings.active_tag_prefixes())
         created: str = get_date(get_local_now(), C.DATE_FORMAT_STORAGE)
-        tags.insert(0, created)
+        if self.settings.get_bool_value(C.SETTING_AUTO_DATE_TAG):
+            tags.insert(0, created)
         note: Note = Note(
             id=self.max_id, title=title, text=text, tags=tags, created=created
         )
@@ -123,13 +124,20 @@ class NotesApp:
             note.title = new_title
         if new_text != note.text:
             if new_text:
-                tags: list[str] = get_tags(new_text)
-                tags.insert(0, note.created)
+                tags: list[str] = get_tags(
+                    new_text, self.settings.active_tag_prefixes()
+                )
+                if self.settings.get_bool_value(C.SETTING_AUTO_DATE_TAG):
+                    tags.insert(0, note.created)
                 note.tags = tags
                 note.text = new_text
             else:
                 note.text = C.DEFAULT_TEXT
-                note.tags = [note.created]
+                note.tags = (
+                    [note.created]
+                    if self.settings.get_bool_value(C.SETTING_AUTO_DATE_TAG)
+                    else []
+                )
         self.storage.save(self.notes)
         return note
 
@@ -140,7 +148,9 @@ class NotesApp:
         return note
 
     def search_note(self, query: str) -> list[Note]:
-        filters: list[tuple[str, str]] = parse_query(query)
+        filters: list[tuple[str, str]] = parse_query(
+            query, self.settings.active_tag_prefixes()
+        )
         results: list[Note] = apply_filters(self.notes, filters)
         return results
 

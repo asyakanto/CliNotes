@@ -48,9 +48,6 @@ class Constants:
         "quit", "archive", "change title", "change text", "restore", "delete", "unknown"
     ]
 
-    # ── Tags ─────────────────────────────────
-    TAG_PREFIXES: Final[list[str]] = ["@", "#", "tag:"]
-
     # ── IDs ──────────────────────────────────
     NO_NOTES_MAX_ID: Final = -1
 
@@ -59,6 +56,27 @@ class Constants:
     SETTING_SHOW_ARCHIVED: Final = "show_archived_notes"
     DATE_FORMAT_SETTING: Final = "date_format"
     SETTING_AUTO_DELETE_DAYS: Final = "auto_delete_days"
+    SETTING_CONFIRM_ARCHIVE: Final = "confirm_archive"
+    SETTING_CONFIRM_DELETE: Final = "confirm_delete"
+    SETTING_AUTO_DATE_TAG: Final = "auto_date_tag"
+    SETTING_USE_AT: Final = "use_@"
+    SETTING_USE_HASH: Final = "use_#"
+    SETTING_USE_TAG_COLON: Final = "use_tag:"
+    SETTING_USE_EXCLAMATION: Final = "use_!"
+    SETTING_USE_DOLLAR: Final = "use_$"
+    SETTING_USE_PLUS: Final = "use_+"
+    SETTING_USE_AMPERSAND: Final = "use_&"
+    SETTING_USE_PERCENT: Final = "use_%"
+    TAG_PREFIX_SETTINGS: Final[dict[str, str]] = {
+        SETTING_USE_AT: "@",
+        SETTING_USE_HASH: "#",
+        SETTING_USE_TAG_COLON: "tag:",
+        SETTING_USE_EXCLAMATION: "!",
+        SETTING_USE_DOLLAR: "$",
+        SETTING_USE_PLUS: "+",
+        SETTING_USE_AMPERSAND: "&",
+        SETTING_USE_PERCENT: "%",
+    }
 
     # ── Search ─────────────────────────────
     KEY_SEARCH_HELP: Final = "%h"

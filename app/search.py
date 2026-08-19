@@ -1,4 +1,3 @@
-from app.constants import Constants as C
 from app.models import Note
 
 
@@ -23,27 +22,28 @@ def split_with_quotes(query: str) -> list[str]:
     current_token: str = ""
     in_quotes: bool = False
     for char in query:
-        if char == '"':
-            in_quotes = not in_quotes
-        elif char == " " and not in_quotes:
-            if current_token:
-                tokens.append(current_token.strip().lower())
-                current_token = ""
-        else:
-            current_token += char
+        match char:
+            case '"':
+                in_quotes = not in_quotes
+            case " ":
+                if not in_quotes and current_token:
+                    tokens.append(current_token.strip().lower())
+                    current_token = ""
+            case _:
+                current_token += char
     if current_token:
         tokens.append(current_token.strip().lower())
     return tokens
 
 
-def parse_query(query: str) -> list[tuple[str, str]]:
+def parse_query(query: str, prefixes: list[str]) -> list[tuple[str, str]]:
     raw_parts: list[str] = split_with_quotes(query)
     raw_parts = merge_prefixes(raw_parts)
     filters: list[tuple[str, str]] = []
 
     for part in raw_parts:
         is_tag: bool = False
-        for prefix in C.TAG_PREFIXES:
+        for prefix in prefixes:
             if part.strip().startswith(prefix):
                 filters.append(("tag", part.removeprefix(prefix).strip()))
                 is_tag = True
@@ -102,20 +102,3 @@ def apply_filters(notes: list[Note], filters: list[tuple[str, str]]) -> list[Not
                         continue
             results = filtered
     return results
-
-
-def search_help() -> str:
-    return f"""╭─ Search help ──────────────────────────────╮
-│ word           — search in title & text    │
-│ @tag  #tag     — search by tag             │
-│ title:word     — search in title only      │
-│ text:word      — search in text only       │
-│ "word"         — search exact phrase       │
-│ title:"phrase" — exact phrase in title     │
-│ text:"phrase"  — exact phrase in text      │
-│                                            │
-│ Combine filters with spaces: AND logic     │
-│ Example: @work title:"meeting notes"       │
-│                                            │
-│ {C.KEY_SEARCH_QUIT}             — quit search               │
-╰────────────────────────────────────────────╯"""

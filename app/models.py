@@ -20,13 +20,11 @@ def get_date(dt: datetime, date_format: str) -> str:
     return dt.strftime(date_format)
 
 
-_PATTERN: str = "|".join(map(re.escape, C.TAG_PREFIXES))
-
-
-def get_tags(text: str) -> list[str]:
+def get_tags(text: str, prefixes: list[str]) -> list[str]:
     tags: list[str] = []
+    _PATTERN: str = "|".join(map(re.escape, prefixes))
     for word in text.split():
-        for prefix in C.TAG_PREFIXES:
+        for prefix in prefixes:
             if word.startswith(prefix):
                 rest: str = word[len(prefix) :]
                 parts: list[str] = re.split(_PATTERN, rest)

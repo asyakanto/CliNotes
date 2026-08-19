@@ -1,6 +1,7 @@
 from typing import Any, Literal
 
 from app.constants import Constants as C
+from app.interface import make_cyan
 from app.models import get_date_format
 
 
@@ -21,7 +22,7 @@ class Settings:
                 field_type="choice",
                 default="DD-MM-YYYY",
                 group="display",
-                order=3,
+                order=2,
                 options=list(C.DATE_FORMAT_MAP.keys()),
             ),
             Setting(
@@ -32,6 +33,94 @@ class Settings:
                 group="archiving/deleting",
                 order=1,
                 min_value=1,
+            ),
+            Setting(
+                key=C.SETTING_CONFIRM_ARCHIVE,
+                label="Confirm before archiving note",
+                field_type="bool",
+                default=False,
+                group="archiving/deleting",
+                order=2,
+            ),
+            Setting(
+                key=C.SETTING_CONFIRM_DELETE,
+                label="Confirm before deleting note",
+                field_type="bool",
+                default=True,
+                group="archiving/deleting",
+                order=3,
+            ),
+            Setting(
+                key=C.SETTING_AUTO_DATE_TAG,
+                label="Add date tag to notes",
+                field_type="bool",
+                default=True,
+                group="creating a note",
+                order=1,
+            ),
+            Setting(
+                key=C.SETTING_USE_AT,
+                label=f"Use {make_cyan(C.TAG_PREFIX_SETTINGS[C.SETTING_USE_AT])} tag prefix",
+                field_type="bool",
+                default=True,
+                group="creating a note",
+                order=3,
+            ),
+            Setting(
+                key=C.SETTING_USE_HASH,
+                label=f"Use {make_cyan(C.TAG_PREFIX_SETTINGS[C.SETTING_USE_HASH])} tag prefix",
+                field_type="bool",
+                default=True,
+                group="creating a note",
+                order=4,
+            ),
+            Setting(
+                key=C.SETTING_USE_TAG_COLON,
+                label=f"Use {make_cyan(C.TAG_PREFIX_SETTINGS[C.SETTING_USE_TAG_COLON])} tag prefix",
+                field_type="bool",
+                default=True,
+                group="creating a note",
+                order=5,
+            ),
+            Setting(
+                key=C.SETTING_USE_EXCLAMATION,
+                label=f"Use {make_cyan(C.TAG_PREFIX_SETTINGS[C.SETTING_USE_EXCLAMATION])} tag prefix",
+                field_type="bool",
+                default=False,
+                group="creating a note",
+                order=6,
+            ),
+            Setting(
+                key=C.SETTING_USE_DOLLAR,
+                label=f"Use {make_cyan(C.TAG_PREFIX_SETTINGS[C.SETTING_USE_DOLLAR])} tag prefix",
+                field_type="bool",
+                default=False,
+                group="creating a note",
+                order=7,
+            ),
+            Setting(
+                key=C.SETTING_USE_PLUS,
+                label=f"Use {make_cyan(C.TAG_PREFIX_SETTINGS[C.SETTING_USE_PLUS])} tag prefix",
+                field_type="bool",
+                default=False,
+                group="creating a note",
+                order=8,
+            ),
+            Setting(
+                key=C.SETTING_USE_AMPERSAND,
+                label=f"Use {make_cyan(C.TAG_PREFIX_SETTINGS[C.SETTING_USE_AMPERSAND])} tag prefix",
+                field_type="bool",
+                default=False,
+                group="creating a note",
+                order=9,
+            ),
+            Setting(
+                key=C.SETTING_USE_PERCENT,
+                label=f"Use {make_cyan(C.TAG_PREFIX_SETTINGS[C.SETTING_USE_PERCENT])} tag prefix",
+                field_type="bool",
+                default=False,
+                group="creating a note",
+                order=10,
             ),
         ]
         self._items: dict[str, Setting] = {s.key: s for s in definition}
@@ -106,6 +195,13 @@ class Settings:
         settings: list[Setting] = [x for x in self._items.values() if x.group == group]
         settings = sorted(settings, key=lambda x: x.order)
         return settings
+
+    def active_tag_prefixes(self) -> list[str]:
+        active_tags: list[str] = []
+        for key, tag in C.TAG_PREFIX_SETTINGS.items():
+            if self.get_bool_value(key):
+                active_tags.append(tag)
+        return active_tags
 
 
 class Setting:

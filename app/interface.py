@@ -10,7 +10,6 @@ from prompt_toolkit import prompt
 
 from app.constants import Constants as C
 from app.models import get_date, get_local_now
-from app.search import search_help
 
 if TYPE_CHECKING:
     from app.app import NotesApp
@@ -33,30 +32,40 @@ def open_note(app: NotesApp, note: Note) -> None:
         print(show_note(note, app))
         action: C.ACTION_TYPE = note_interface(note)
 
-        if action == C.ACTION_QUIT:
-            break
-        elif action == C.ACTION_ARCHIVE:
-            app.archive_note(note)
-        elif action == C.ACTION_CHANGE_TITLE:
-            new_title: str = prompt_input(
-                hint="New title", prompt_default_text=note.title, lowercase=False
-            )
-            app.edit_note(note, new_title, note.text)
-        elif action == C.ACTION_CHANGE_TEXT:
-            new_text: str = prompt_input(
-                hint="New text", prompt_default_text=note.text, lowercase=False
-            )
-            app.edit_note(note, note.title, new_text)
-        elif action == C.ACTION_UNKNOWN:
-            pause("Wrong action")
-        elif action == C.ACTION_RESTORE:
-            app.restore_note(note)
-        elif (
-            action == C.ACTION_DELETE
-            and prompt_input("Delete this note? (y/n)", danger=True) == "y"
-        ):
-            app.delete_note(note)
-            break
+        match action:
+            case C.ACTION_QUIT:
+                break
+            case C.ACTION_ARCHIVE:
+                if confirm(
+                    app=app,
+                    setting_key=C.SETTING_CONFIRM_ARCHIVE,
+                    message="Archive this note? (y/n)",
+                    danger=False,
+                ):
+                    app.archive_note(note)
+            case C.ACTION_CHANGE_TITLE:
+                new_title: str = prompt_input(
+                    hint="New title", prompt_default_text=note.title, lowercase=False
+                )
+                app.edit_note(note, new_title, note.text)
+            case C.ACTION_CHANGE_TEXT:
+                new_text: str = prompt_input(
+                    hint="New text", prompt_default_text=note.text, lowercase=False
+                )
+                app.edit_note(note, note.title, new_text)
+            case C.ACTION_UNKNOWN:
+                pause("Wrong action")
+            case C.ACTION_RESTORE:
+                app.restore_note(note)
+            case C.ACTION_DELETE:
+                if confirm(
+                    app=app,
+                    setting_key=C.SETTING_CONFIRM_DELETE,
+                    message="Delete this note? (y/n)",
+                    danger=True,
+                ):
+                    app.delete_note(note)
+                    break
 
 
 def make_cyan(text: str) -> str:
@@ -109,30 +118,31 @@ def show_note(note: Note, app: NotesApp) -> str:
 
 def note_interface(note: Note) -> C.ACTION_TYPE:
     mode: str
+    mode = read_input()
     if not note.archived:
-        mode = read_input()
-        if mode == C.KEY_QUIT:
-            return C.ACTION_QUIT
-        elif mode == C.KEY_ARCHIVE:
-            return C.ACTION_ARCHIVE
-        elif mode == C.KEY_EDIT:
-            editing_mode: str = prompt_input(
-                hint=f"Edit: {C.KEY_EDIT_TITLE} - title, {C.KEY_EDIT_TEXT} - text"
-            )
-            if editing_mode == C.KEY_EDIT_TITLE:
-                return C.ACTION_CHANGE_TITLE
-            if editing_mode == C.KEY_EDIT_TEXT:
-                return C.ACTION_CHANGE_TEXT
-        return C.ACTION_UNKNOWN
+        match mode:
+            case C.KEY_QUIT:
+                return C.ACTION_QUIT
+            case C.KEY_ARCHIVE:
+                return C.ACTION_ARCHIVE
+            case C.KEY_EDIT:
+                editing_mode: str = prompt_input(
+                    hint=f"Edit: {C.KEY_EDIT_TITLE} - title, {C.KEY_EDIT_TEXT} - text"
+                )
+                if editing_mode == C.KEY_EDIT_TITLE:
+                    return C.ACTION_CHANGE_TITLE
+                if editing_mode == C.KEY_EDIT_TEXT:
+                    return C.ACTION_CHANGE_TEXT
+
     else:
-        mode = read_input()
-        if mode == C.KEY_QUIT:
-            return C.ACTION_QUIT
-        elif mode == C.KEY_RESTORE:
-            return C.ACTION_RESTORE
-        elif mode == C.KEY_DELETE:
-            return C.ACTION_DELETE
-        return C.ACTION_UNKNOWN
+        match mode:
+            case C.KEY_QUIT:
+                return C.ACTION_QUIT
+            case C.KEY_RESTORE:
+                return C.ACTION_RESTORE
+            case C.KEY_DELETE:
+                return C.ACTION_DELETE
+    return C.ACTION_UNKNOWN
 
 
 def get_visible_notes(notes: list[Note], display_archive: bool) -> list[Note]:
@@ -378,7 +388,7 @@ def search_scenario(app: NotesApp) -> None:
         hint=f"Enter a search query ({C.KEY_SEARCH_HELP} for help)"
     )
     while query == C.KEY_SEARCH_HELP:
-        print(search_help())
+        print(search_help(app.settings.active_tag_prefixes()))
         query = prompt_input(
             hint=f"Enter a search query ({C.KEY_SEARCH_HELP} for help)"
         )
@@ -438,3 +448,49 @@ def prompt_input(
     else:
         print(make_cyan(hint))
     return read_input(lowercase=lowercase, prompt_default_text=prompt_default_text)
+
+
+def confirm(
+    app: NotesApp, setting_key: str, message: str, danger: bool = False
+) -> bool:
+    return (
+        not app.settings.get_bool_value(setting_key)
+        or prompt_input(message, danger=danger) == "y"
+    )
+
+
+def make_box(lines: list[str], title: str) -> str:
+    content_width: int = max(len(line) for line in lines)
+    result: str = ""
+    result += f"╭─ {title} {'─' * (content_width - len(title) - 2)}─╮\n"
+    for line in lines:
+        result += f"│ {line.ljust(content_width)} |\n"
+    result += f"╰{'─' * (content_width + 2)}╯"
+    return result
+
+
+def search_help(prefixes: list[str]) -> str:
+    pairs: list[tuple[str, str]] = [
+        ("word", "search in title & text"),
+        *((f"{p}tag", "search by tag") for p in prefixes),
+        ("title:word", "search in title only"),
+        ("text:word", "search in text only"),
+        ('"word"', "search exact phrase"),
+        ('title:"phrase"', "exact phrase in title"),
+        ('text:"phrase"', "exact phrase in text"),
+        ("", ""),
+        (C.KEY_SEARCH_QUIT, "quit search"),
+        ("", ""),
+    ]
+    Wid: int = max(len(l) for l, r in pairs)
+    lines: list[str] = []
+    for l, r in pairs:
+        if not l and not r:
+            lines.append("")
+        else:
+            lines.append(f"{l:<{Wid}}— {r}")
+    lines.append("Combine filters with spaces: AND logic")
+    lines.append(
+        f'{prefixes[0] + "work " if len(prefixes) else ""}text:"123 123" title:"meeting notes"'
+    )
+    return make_box(lines, "Search help")
