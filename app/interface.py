@@ -127,7 +127,9 @@ def show_note(note: Note, app: NotesApp) -> str:
             deleting_at = "unknown date"
         body += make_red(f"ARCHIVED: note will be deleted at {deleting_at}\n")
     body += make_muted(str(note.id) + " #: " + ", ".join(note.tags) + "\n\n")
-    body += note.text
+    body += (
+        note.text if note.text else app.settings.get_str_value(C.SETTING_DEFAULT_TEXT)
+    )
     hints: str = (
         make_hint(
             f"Choose action: {C.KEY_QUIT} - quit; {C.KEY_ARCHIVE} - archive note; {C.KEY_EDIT} - edit note"
@@ -225,17 +227,17 @@ def get_notifications(app: NotesApp) -> str:
     if not app._notifications:
         return ""
 
-    result: str = ""
-
+    lines: list[str] = []
     for notification in app.pop_notifications():
-        result += make_red("[!] " + notification + "\n")
-    return result
+        lines.append(make_red("[!] " + notification))
+    return "\n".join(lines)
 
 
 def show_settings_categories(app: NotesApp) -> str:
     header: str = get_header("Settings")
     hints: str = make_hint(
-        "Actions: {ID} - open category; " + f"{C.KEY_SEARCH_QUIT} - quit"
+        "Actions: {ID} - open category; "
+        + f"{C.KEY_SEARCH_QUIT} - quit; {C.KEY_RESET_SETTINGS} - reset all settings"
     )
     lines: list[str] = []
     for i, group in enumerate(app.settings.groups()):
@@ -253,6 +255,19 @@ def settings_interface(app: NotesApp) -> None:
         action: str = read_input()
         if action == C.KEY_SEARCH_QUIT:
             return
+        elif action == C.KEY_RESET_SETTINGS:
+            if (
+                prompt_input("Reset all settings? (y/n)", lowercase=True, danger=True)
+                == "y"
+            ):
+                app.reset_settings()
+                set_colors_enabled(app.settings.get_bool_value(C.SETTING_USE_COLORS))
+                set_clear_screen_enabled(
+                    app.settings.get_bool_value(C.SETTING_USE_CLEAR_SCREEN)
+                )
+                set_hints_enabled(app.settings.get_bool_value(C.SETTING_USE_HINTS))
+                app.sync_tags_if_enabled()
+                app.add_notification("Settings reset to defaults")
         elif action.isdigit() and "." not in action:
             if 0 <= int(action) < len(groups):
                 settings_group_interface(app, groups[int(action)])
@@ -323,6 +338,12 @@ def edit_setting(app: NotesApp, setting: Setting) -> None:
                 )
             if setting.key == C.SETTING_USE_HINTS:
                 set_hints_enabled(app.settings.get_bool_value(C.SETTING_USE_HINTS))
+            if (
+                setting.key in C.TAG_PREFIX_SETTINGS
+                or setting.key == C.SETTING_AUTO_DATE_TAG
+                or setting.key == C.SETTING_AUTO_SYNC_TAGS
+            ):
+                app.sync_tags_if_enabled()
         case "int":
             min_value: int | None = setting.min_value
             max_value: int | None = setting.max_value
@@ -479,7 +500,8 @@ def prompt_input(
     prompt_default_text: str | None = None,
     danger: bool = False,
 ) -> str:
-    print(make_hint(hint, danger=danger))
+
+    print(f"{make_red(hint) if danger else make_cyan(hint)}\n")
     return read_input(lowercase=lowercase, prompt_default_text=prompt_default_text)
 
 

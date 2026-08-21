@@ -28,6 +28,7 @@ class NotesApp:
         self._notifications: list[str] = []
         self.notes = self._fix_invalid_ids()
         self.notes = self._delete_archived_notes()
+        self.sync_tags_if_enabled()
 
     def _calculate_max_id(self) -> int:
         max_id: int = C.NO_NOTES_MAX_ID
@@ -82,9 +83,30 @@ class NotesApp:
             )
         return self.notes
 
+    def _sync_tags_with_settings(self) -> list[Note]:
+        prefixes: list[str] = self.settings.active_tag_prefixes()
+        auto_date: bool = self.settings.get_bool_value(C.SETTING_AUTO_DATE_TAG)
+        counter: int = 0
+        for note in self.notes:
+            new_tags = get_tags(note.text, prefixes)
+            if auto_date and note.created not in new_tags:
+                new_tags.insert(0, note.created)
+            if new_tags != note.tags:
+                note.tags = new_tags
+                counter += 1
+
+        if counter > 0:
+            self.add_notification(
+                f"Updated {counter} note{'s' if counter != 1 else ''} tags"
+            )
+            self.storage.save(self.notes)
+        return self.notes
+
+    def sync_tags_if_enabled(self) -> None:
+        if self.settings.get_bool_value(C.SETTING_AUTO_SYNC_TAGS):
+            self._sync_tags_with_settings()
+
     def create_note(self, title: str, text: str) -> Note:
-        if not text.strip():
-            text = self.settings.get_str_value(C.SETTING_DEFAULT_TEXT)
         self.max_id += 1
         tags: list[str] = get_tags(text, self.settings.active_tag_prefixes())
         created: str = get_date(get_local_now(), C.DATE_FORMAT_STORAGE)
@@ -132,7 +154,7 @@ class NotesApp:
                 note.tags = tags
                 note.text = new_text
             else:
-                note.text = self.settings.get_str_value(C.SETTING_DEFAULT_TEXT)
+                note.text = ""
                 note.tags = (
                     [note.created]
                     if self.settings.get_bool_value(C.SETTING_AUTO_DATE_TAG)
@@ -165,3 +187,7 @@ class NotesApp:
 
     def save_settings(self) -> None:
         self.storage.save_settings(self.settings)
+
+    def reset_settings(self) -> None:
+        self.settings.reset_all()
+        self.save_settings()

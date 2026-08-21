@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any, Literal
 
 from app.constants import Constants as C
@@ -51,12 +52,20 @@ class Settings:
                 order=3,
             ),
             Setting(
+                key=C.SETTING_AUTO_SYNC_TAGS,
+                order=1,
+                label="Auto-sync note tags",
+                field_type="bool",
+                default=True,
+                group="creating a note",
+            ),
+            Setting(
                 key=C.SETTING_AUTO_DATE_TAG,
                 label="Add date tag to notes",
                 field_type="bool",
                 default=True,
                 group="creating a note",
-                order=1,
+                order=2,
             ),
             Setting(
                 key=C.SETTING_DEFAULT_TEXT,
@@ -64,7 +73,7 @@ class Settings:
                 field_type="str",
                 default="-",
                 group="creating a note",
-                order=2,
+                order=3,
             ),
             Setting(
                 key=C.SETTING_USE_AT,
@@ -72,7 +81,7 @@ class Settings:
                 field_type="bool",
                 default=True,
                 group="creating a note",
-                order=3,
+                order=4,
             ),
             Setting(
                 key=C.SETTING_USE_HASH,
@@ -80,7 +89,7 @@ class Settings:
                 field_type="bool",
                 default=True,
                 group="creating a note",
-                order=4,
+                order=5,
             ),
             Setting(
                 key=C.SETTING_USE_TAG_COLON,
@@ -88,7 +97,7 @@ class Settings:
                 field_type="bool",
                 default=True,
                 group="creating a note",
-                order=5,
+                order=6,
             ),
             Setting(
                 key=C.SETTING_USE_EXCLAMATION,
@@ -96,7 +105,7 @@ class Settings:
                 field_type="bool",
                 default=False,
                 group="creating a note",
-                order=6,
+                order=7,
             ),
             Setting(
                 key=C.SETTING_USE_DOLLAR,
@@ -104,7 +113,7 @@ class Settings:
                 field_type="bool",
                 default=False,
                 group="creating a note",
-                order=7,
+                order=8,
             ),
             Setting(
                 key=C.SETTING_USE_PLUS,
@@ -112,7 +121,7 @@ class Settings:
                 field_type="bool",
                 default=False,
                 group="creating a note",
-                order=8,
+                order=9,
             ),
             Setting(
                 key=C.SETTING_USE_AMPERSAND,
@@ -120,7 +129,7 @@ class Settings:
                 field_type="bool",
                 default=False,
                 group="creating a note",
-                order=9,
+                order=10,
             ),
             Setting(
                 key=C.SETTING_USE_PERCENT,
@@ -128,7 +137,7 @@ class Settings:
                 field_type="bool",
                 default=False,
                 group="creating a note",
-                order=10,
+                order=11,
             ),
             Setting(
                 key=C.SETTING_USE_COLORS,
@@ -153,6 +162,31 @@ class Settings:
                 default=True,
                 group="interface",
                 order=3,
+            ),
+            Setting(
+                key=C.SETTING_NOTES_PATH,
+                label="Notes file path",
+                field_type="str",
+                default=str(Path(__file__).parent.parent),
+                order=1,
+                group="system",
+            ),
+            Setting(
+                key=C.SETTING_LOG_LEVEL,
+                label="Log level",
+                field_type="choice",
+                default="low",
+                group="system",
+                order=2,
+                options=list(C.LOG_LEVELS),
+            ),
+            Setting(
+                key=C.SETTING_AUTO_SAVE,
+                label="Autosave",
+                field_type="bool",
+                default=True,
+                order=3,
+                group="system",
             ),
         ]
         self._items: dict[str, Setting] = {s.key: s for s in definition}
@@ -234,6 +268,10 @@ class Settings:
             if self.get_bool_value(key):
                 active_tags.append(tag)
         return active_tags
+
+    def reset_all(self) -> None:
+        for setting in self._items.values():
+            setting.value = setting.default
 
 
 class Setting:

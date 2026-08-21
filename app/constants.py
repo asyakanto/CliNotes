@@ -52,6 +52,8 @@ class Constants:
 
     # ── Settings ─────────────────────────────
 
+    KEY_RESET_SETTINGS: Final = "r"
+
     SETTING_SHOW_ARCHIVED: Final = "show_archived_notes"
     DATE_FORMAT_SETTING: Final = "date_format"
     SETTING_AUTO_DELETE_DAYS: Final = "auto_delete_days"
@@ -80,6 +82,11 @@ class Constants:
     SETTING_USE_COLORS: Final = "use_colors"
     SETTING_USE_CLEAR_SCREEN: Final = "use_clear_screen"
     SETTING_USE_HINTS: Final = "use_hints"
+    SETTING_AUTO_SYNC_TAGS: Final = "auto_sync_tags"
+    SETTING_NOTES_PATH: Final = "notes_path"
+    SETTING_LOG_LEVEL: Final = "log_level"
+    SETTING_AUTO_SAVE: Final = "auto_save"
+    LOG_LEVELS: Final = ["off", "low", "high"]
 
     # ── Search ─────────────────────────────
     KEY_SEARCH_HELP: Final = "%h"
