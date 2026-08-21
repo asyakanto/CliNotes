@@ -273,6 +273,9 @@ class Settings:
         for setting in self._items.values():
             setting.value = setting.default
 
+    def reset_setting(self, key: str) -> None:
+        self.set_value(key, self._items[key].default)
+
 
 class Setting:
     def __init__(

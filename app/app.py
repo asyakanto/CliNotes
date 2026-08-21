@@ -17,18 +17,11 @@ class NotesApp:
     storage: Storage
 
     def __init__(self) -> None:
+        self._notifications: list[str] = []
         self.storage = Storage()
         self.settings = self.storage.load_settings()
-
-        raw_notes = self.storage.load()
-        self.notes = [Note(**n) for n in raw_notes]
-
-        self.max_id = self._calculate_max_id()
-
-        self._notifications: list[str] = []
-        self.notes = self._fix_invalid_ids()
-        self.notes = self._delete_archived_notes()
-        self.sync_tags_if_enabled()
+        self.apply_notes_path()
+        self._load_notes()
 
     def _calculate_max_id(self) -> int:
         max_id: int = C.NO_NOTES_MAX_ID
@@ -53,7 +46,7 @@ class NotesApp:
             logger.warning(
                 f"Fixed {duplicates_found} invalid {'IDs' if duplicates_found != 1 and duplicates_found != 0 else 'ID'}"
             )
-            self.storage.save(self.notes)
+            self._save_if_auto()
         return self.notes
 
     def _delete_archived_notes(self) -> list[Note]:
@@ -99,7 +92,7 @@ class NotesApp:
             self.add_notification(
                 f"Updated {counter} note{'s' if counter != 1 else ''} tags"
             )
-            self.storage.save(self.notes)
+            self._save_if_auto()
         return self.notes
 
     def sync_tags_if_enabled(self) -> None:
@@ -117,7 +110,7 @@ class NotesApp:
         )
         self.notes.append(note)
         logger.info(f"Note created: #{note.id}: {note.title}")
-        self.storage.save(self.notes)
+        self._save_if_auto()
         return note
 
     def get_note(self, id: int) -> Note | None:
@@ -130,7 +123,7 @@ class NotesApp:
         note.archived = True
         note.archived_at = get_date(get_local_now(), C.DATE_FORMAT_STORAGE)
         logger.info(f"Note archived: #{note.id}: {note.title}")
-        self.storage.save(self.notes)
+        self._save_if_auto()
         return note
 
     def delete_note(self, note: Note) -> None:
@@ -139,7 +132,7 @@ class NotesApp:
             if note_item.id == note_id:
                 self.notes.pop(i)
                 break
-        self.storage.save(self.notes)
+        self._save_if_auto()
 
     def edit_note(self, note: Note, new_title: str, new_text: str) -> Note:
         if new_title and new_title != note.title:
@@ -160,13 +153,13 @@ class NotesApp:
                     if self.settings.get_bool_value(C.SETTING_AUTO_DATE_TAG)
                     else []
                 )
-        self.storage.save(self.notes)
+        self._save_if_auto()
         return note
 
     def restore_note(self, note: Note) -> Note:
         note.archived = False
         note.archived_at = C.DEFAULT_ARCHIVED_AT
-        self.storage.save(self.notes)
+        self._save_if_auto()
         return note
 
     def search_note(self, query: str) -> list[Note]:
@@ -191,3 +184,38 @@ class NotesApp:
     def reset_settings(self) -> None:
         self.settings.reset_all()
         self.save_settings()
+
+    def apply_notes_path(self) -> None:
+        result: bool = self.storage.update_notes_path(self.settings)
+        if not result:
+            self.settings.reset_setting(C.SETTING_NOTES_PATH)
+            self.save_settings()
+            self.add_notification("Invalid path, using default")
+
+        self._load_notes()
+
+    def save_notes(self) -> None:
+        self.storage.save(self.notes)
+
+    def _save_if_auto(self) -> None:
+        if self.settings.get_bool_value(C.SETTING_AUTO_SAVE):
+            self.storage.save(self.notes)
+
+    def apply_log_level(self) -> None:
+        level: str = self.settings.get_str_value(C.SETTING_LOG_LEVEL)
+        logger: logging.Logger = logging.getLogger()
+        if level == C.LOG_LEVELS[0]:
+            logger.setLevel(logging.CRITICAL + 1)
+        elif level == C.LOG_LEVELS[1]:
+            logger.setLevel(logging.ERROR)
+        elif level == C.LOG_LEVELS[2]:
+            logger.setLevel(logging.DEBUG)
+
+    def _load_notes(self) -> None:
+        self.notes = [Note(**n) for n in self.storage.load()]
+
+        self.max_id = self._calculate_max_id()
+
+        self.notes = self._fix_invalid_ids()
+        self.notes = self._delete_archived_notes()
+        self.sync_tags_if_enabled()

@@ -267,6 +267,8 @@ def settings_interface(app: NotesApp) -> None:
                 )
                 set_hints_enabled(app.settings.get_bool_value(C.SETTING_USE_HINTS))
                 app.sync_tags_if_enabled()
+                app.apply_log_level()
+                app.apply_notes_path()
                 app.add_notification("Settings reset to defaults")
         elif action.isdigit() and "." not in action:
             if 0 <= int(action) < len(groups):
@@ -384,6 +386,10 @@ def edit_setting(app: NotesApp, setting: Setting) -> None:
             edited_str: bool = app.settings.set_value(setting.key, value)
             if not edited_str:
                 pause(f"Text length is over than {max_length} characters")
+
+            if setting.key == C.SETTING_NOTES_PATH:
+                app.apply_notes_path()
+
         case "choice":
             clear_screen()
             lines: list[str] = []
@@ -401,6 +407,8 @@ def edit_setting(app: NotesApp, setting: Setting) -> None:
                 value.isdigit() and "." not in value and 0 <= int(value) < len(choices)
             ):
                 app.settings.set_value(setting.key, choices[int(value)])
+                if setting.key == C.SETTING_LOG_LEVEL:
+                    app.apply_log_level()
             else:
                 pause("Wrong ID")
 

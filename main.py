@@ -38,13 +38,15 @@ def main() -> None:
 
     try:
         app: NotesApp = NotesApp()
+        app.apply_log_level()
         set_colors_enabled(app.settings.get_bool_value(C.SETTING_USE_COLORS))
         set_clear_screen_enabled(
             app.settings.get_bool_value(C.SETTING_USE_CLEAR_SCREEN)
         )
         set_hints_enabled(app.settings.get_bool_value(C.SETTING_USE_HINTS))
         logger.info("Application started")
-        while True:
+        is_running: bool = True
+        while is_running:
             mode: str = display_main_menu(app)
 
             if mode.isdigit() and "." not in mode:
@@ -55,7 +57,8 @@ def main() -> None:
             elif mode == C.KEY_QUIT:
                 logger.info("Application closed")
                 clear_screen()
-                break
+                app.save_notes()
+                is_running = False
 
             elif mode == C.KEY_CREATE:
                 create_note_scenario(app)
@@ -72,6 +75,7 @@ def main() -> None:
                 settings_interface(app)
 
     except KeyboardInterrupt:
+        app.save_notes()
         logger.info("Application interrupted by user")
     except Exception:
         logger.exception("Fatal error")

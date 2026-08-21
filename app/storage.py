@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 class Storage:
     JSON_PATH: Path
     SETTINGS_PATH: Path
+    root: Path = Path(__file__).parent.parent
 
     def __init__(self) -> None:
         self.JSON_PATH = Path(__file__).parent.parent / C.FILE_NOTES
@@ -61,3 +62,13 @@ class Storage:
         with open(self.SETTINGS_PATH, "w", encoding="utf-8") as file:
             dump(settings.settings_to_dict(), file, ensure_ascii=False, indent=2)
             logger.info("Settings updated")
+
+    def update_notes_path(self, settings: Settings) -> bool:
+        str_path: str = settings.get_str_value(C.SETTING_NOTES_PATH)
+        path: Path = self.root / str_path
+        if path.is_dir():
+            self.JSON_PATH = path / C.FILE_NOTES
+            return True
+
+        self.JSON_PATH = self.root / C.FILE_NOTES
+        return False
