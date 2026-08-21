@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 from prompt_toolkit import prompt
 
 from app.constants import Constants as C
-from app.models import get_date, get_local_now
+from app.models import get_date, get_local_now, has_easter_egg
 
 if TYPE_CHECKING:
     from app.app import NotesApp
@@ -107,8 +107,14 @@ def make_red(text: str) -> str:
     return text
 
 
+def make_pink(text: str) -> str:
+    if _COLORS_ENABLED:
+        return C.ANSI_PINK + text + C.ANSI_RESET
+    return text
+
+
 def show_note(note: Note, app: NotesApp) -> str:
-    header: str = get_header(note.title)
+    header: str = get_header(note.title, pink=has_easter_egg(note.text))
     body: str = ""
     if note.archived:
         deleting_at: str
@@ -413,7 +419,7 @@ def edit_setting(app: NotesApp, setting: Setting) -> None:
                 pause("Wrong ID")
 
 
-def get_header(text: str) -> str:
+def get_header(text: str, pink: bool = False) -> str:
     width: int = shutil.get_terminal_size().columns
     if width <= 0:
         width = C.DEFAULT_TERMINAL_WIDTH
@@ -422,7 +428,7 @@ def get_header(text: str) -> str:
     return (
         "=" * (padding // 2)
         + " "
-        + make_cyan(text)
+        + (make_cyan(text) if not pink else make_pink(text))
         + " "
         + "=" * (padding - padding // 2)
     )

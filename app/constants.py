@@ -7,6 +7,7 @@ class Constants:
     ANSI_RED: Final = "\033[31m"
     ANSI_CYAN: Final = "\033[36m"
     ANSI_DIM: Final = "\033[2m"
+    ANSI_PINK: Final = "\033[38;5;213m"
 
     # ── Files ────────────────────────────────
     FILE_NOTES: Final = "notes.json"
@@ -19,6 +20,8 @@ class Constants:
 
     # ── UI ───────────────────────────────────
     UI_PROMPT: Final = "> "
+    EASTER_EGG: Final = "<3"
+    EASTER_EGG_CONDITIONS: Final = ["asya", "kanto"]
 
     # ── Keys (главное меню) ─────────────────
     KEY_QUIT: Final = "q"

@@ -32,6 +32,8 @@ def get_tags(text: str, prefixes: list[str]) -> list[str]:
                     if part and part not in tags:
                         tags.append(part)
                 break
+    if has_easter_egg(text) and C.EASTER_EGG not in tags:
+        tags.append("<3")
     return tags
 
 
@@ -45,3 +47,10 @@ def get_date_format(display_key: str) -> str:
     except KeyError:
         date_format = "%d-%m-%Y"
     return date_format
+
+
+def has_easter_egg(text: str) -> bool:
+
+    return C.EASTER_EGG_CONDITIONS == [
+        condition for condition in C.EASTER_EGG_CONDITIONS if condition in text.lower()
+    ]
