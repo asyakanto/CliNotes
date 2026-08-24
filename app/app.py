@@ -16,12 +16,22 @@ class NotesApp:
     settings: Settings
     storage: Storage
 
+    # ── Life cycle ───────────────────────────
     def __init__(self) -> None:
         self._notifications: list[str] = []
         self.storage = Storage()
         self.settings = self.storage.load_settings()
         self.apply_notes_path()
         self._load_notes()
+
+    def _load_notes(self) -> None:
+        self.notes = [Note(**n) for n in self.storage.load()]
+
+        self.max_id = self._calculate_max_id()
+
+        self.notes = self._fix_invalid_ids()
+        self.notes = self._delete_archived_notes()
+        self.sync_tags_if_enabled()
 
     def _calculate_max_id(self) -> int:
         max_id: int = C.NO_NOTES_MAX_ID
@@ -76,14 +86,74 @@ class NotesApp:
             )
         return self.notes
 
+    # ── CRUD ─────────────────────────────────
+
+    def create_note(self, title: str, text: str) -> Note:
+        self.max_id += 1
+        created: str = get_date(get_local_now(), C.DATE_FORMAT_STORAGE)
+        note: Note = Note(
+            id=self.max_id,
+            title=title,
+            text=text,
+            tags=self._build_tags(text, created),
+            created=created,
+        )
+        self.notes.append(note)
+        logger.info(f"Note created: #{note.id}: {note.title}")
+        self._save_if_auto()
+        return note
+
+    def get_note(self, id: int) -> Note | None:
+        for note in self.notes:
+            if id == note.id:
+                return note
+        return None
+
+    def edit_note(self, note: Note, new_title: str, new_text: str) -> Note:
+        if new_title and new_title != note.title:
+            note.title = new_title
+        if new_text != note.text:
+            note.tags = self._build_tags(new_text, note.created)
+            note.text = new_text
+        self._save_if_auto()
+        return note
+
+    def archive_note(self, note: Note) -> Note:
+        note.archived = True
+        note.archived_at = get_date(get_local_now(), C.DATE_FORMAT_STORAGE)
+        logger.info(f"Note archived: #{note.id}: {note.title}")
+        self._save_if_auto()
+        return note
+
+    def restore_note(self, note: Note) -> Note:
+        note.archived = False
+        note.archived_at = C.DEFAULT_ARCHIVED_AT
+        self._save_if_auto()
+        return note
+
+    def delete_note(self, note: Note) -> None:
+        note_id: int | None = note.id
+        for i, note_item in enumerate(self.notes):
+            if note_item.id == note_id:
+                self.notes.pop(i)
+                break
+        self._save_if_auto()
+
+    # ── Search ───────────────────────────────
+
+    def search_note(self, query: str) -> list[Note]:
+        filters: list[tuple[str, str]] = parse_query(
+            query, self.settings.active_tag_prefixes()
+        )
+        results: list[Note] = apply_filters(self.notes, filters)
+        return results
+
+    # ── Tags ─────────────────────────────────
+
     def _sync_tags_with_settings(self) -> list[Note]:
-        prefixes: list[str] = self.settings.active_tag_prefixes()
-        auto_date: bool = self.settings.get_bool_value(C.SETTING_AUTO_DATE_TAG)
         counter: int = 0
         for note in self.notes:
-            new_tags = get_tags(note.text, prefixes)
-            if auto_date and note.created not in new_tags:
-                new_tags.insert(0, note.created)
+            new_tags = self._build_tags(note.text, note.created)
             if new_tags != note.tags:
                 note.tags = new_tags
                 counter += 1
@@ -99,85 +169,13 @@ class NotesApp:
         if self.settings.get_bool_value(C.SETTING_AUTO_SYNC_TAGS):
             self._sync_tags_with_settings()
 
-    def create_note(self, title: str, text: str) -> Note:
-        self.max_id += 1
+    def _build_tags(self, text: str, created: str) -> list[str]:
         tags: list[str] = get_tags(text, self.settings.active_tag_prefixes())
-        created: str = get_date(get_local_now(), C.DATE_FORMAT_STORAGE)
         if self.settings.get_bool_value(C.SETTING_AUTO_DATE_TAG):
             tags.insert(0, created)
-        note: Note = Note(
-            id=self.max_id, title=title, text=text, tags=tags, created=created
-        )
-        self.notes.append(note)
-        logger.info(f"Note created: #{note.id}: {note.title}")
-        self._save_if_auto()
-        return note
+        return tags
 
-    def get_note(self, id: int) -> Note | None:
-        for note in self.notes:
-            if id == note.id:
-                return note
-        return None
-
-    def archive_note(self, note: Note) -> Note:
-        note.archived = True
-        note.archived_at = get_date(get_local_now(), C.DATE_FORMAT_STORAGE)
-        logger.info(f"Note archived: #{note.id}: {note.title}")
-        self._save_if_auto()
-        return note
-
-    def delete_note(self, note: Note) -> None:
-        note_id: int | None = note.id
-        for i, note_item in enumerate(self.notes):
-            if note_item.id == note_id:
-                self.notes.pop(i)
-                break
-        self._save_if_auto()
-
-    def edit_note(self, note: Note, new_title: str, new_text: str) -> Note:
-        if new_title and new_title != note.title:
-            note.title = new_title
-        if new_text != note.text:
-            if new_text:
-                tags: list[str] = get_tags(
-                    new_text, self.settings.active_tag_prefixes()
-                )
-                if self.settings.get_bool_value(C.SETTING_AUTO_DATE_TAG):
-                    tags.insert(0, note.created)
-                note.tags = tags
-                note.text = new_text
-            else:
-                note.text = ""
-                note.tags = (
-                    [note.created]
-                    if self.settings.get_bool_value(C.SETTING_AUTO_DATE_TAG)
-                    else []
-                )
-        self._save_if_auto()
-        return note
-
-    def restore_note(self, note: Note) -> Note:
-        note.archived = False
-        note.archived_at = C.DEFAULT_ARCHIVED_AT
-        self._save_if_auto()
-        return note
-
-    def search_note(self, query: str) -> list[Note]:
-        filters: list[tuple[str, str]] = parse_query(
-            query, self.settings.active_tag_prefixes()
-        )
-        results: list[Note] = apply_filters(self.notes, filters)
-        return results
-
-    def add_notification(self, message: str) -> None:
-        if message.strip():
-            self._notifications.append(message.strip())
-
-    def pop_notifications(self) -> list[str]:
-        notifications: list[str] = self._notifications
-        self._notifications = []
-        return notifications
-
+    # ── Settings ─────────────────────────────
     def save_settings(self) -> None:
         self.storage.save_settings(self.settings)
 
@@ -194,13 +192,6 @@ class NotesApp:
 
         self._load_notes()
 
-    def save_notes(self) -> None:
-        self.storage.save(self.notes)
-
-    def _save_if_auto(self) -> None:
-        if self.settings.get_bool_value(C.SETTING_AUTO_SAVE):
-            self.storage.save(self.notes)
-
     def apply_log_level(self) -> None:
         level: str = self.settings.get_str_value(C.SETTING_LOG_LEVEL)
         logger: logging.Logger = logging.getLogger()
@@ -211,11 +202,21 @@ class NotesApp:
         elif level == C.LOG_LEVELS[2]:
             logger.setLevel(logging.DEBUG)
 
-    def _load_notes(self) -> None:
-        self.notes = [Note(**n) for n in self.storage.load()]
+    # ── Saving ───────────────────────────────
+    def save_notes(self) -> None:
+        self.storage.save(self.notes)
 
-        self.max_id = self._calculate_max_id()
+    def _save_if_auto(self) -> None:
+        if self.settings.get_bool_value(C.SETTING_AUTO_SAVE):
+            self.storage.save(self.notes)
 
-        self.notes = self._fix_invalid_ids()
-        self.notes = self._delete_archived_notes()
-        self.sync_tags_if_enabled()
+    # ── Notifications ────────────────────────
+
+    def add_notification(self, message: str) -> None:
+        if message.strip():
+            self._notifications.append(message.strip())
+
+    def pop_notifications(self) -> list[str]:
+        notifications: list[str] = self._notifications
+        self._notifications = []
+        return notifications

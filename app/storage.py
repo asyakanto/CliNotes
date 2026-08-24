@@ -61,7 +61,7 @@ class Storage:
     def save_settings(self, settings: Settings) -> None:
         with open(self.SETTINGS_PATH, "w", encoding="utf-8") as file:
             dump(settings.settings_to_dict(), file, ensure_ascii=False, indent=2)
-            logger.info("Settings updated")
+            logger.info("Settings changed and saved successfully")
 
     def update_notes_path(self, settings: Settings) -> bool:
         str_path: str = settings.get_str_value(C.SETTING_NOTES_PATH)
