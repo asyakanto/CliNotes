@@ -1,7 +1,57 @@
 from pathlib import Path
+from typing import Literal
 
 from app.constants import Constants as C
-from app.settings import Setting
+
+
+class Setting:
+    def __init__(
+        self,
+        key: str,
+        label: str,
+        field_type: Literal["int", "bool", "str", "choice"],
+        default: int | bool | str,
+        group: str,
+        order: int,
+        options: list[str | int] | None = None,
+        min_value: int | None = None,
+        max_value: int | None = None,
+        max_length: int | None = None,
+        value: int | bool | str | None = None,
+    ) -> None:
+        self.key = key
+        self.label = label
+        self.field_type = field_type
+        self.value = value if value is not None else default
+        self.default = default
+        self.group = group
+        self.order = order
+        self.options = options if options is not None else []
+        self.min_value = min_value
+        self.max_value = max_value
+        self.max_length = max_length
+
+    def validate(self, value: bool | str | int) -> bool:
+        return (
+            (self.field_type == "bool" and isinstance(value, bool))
+            or (
+                self.field_type == "str"
+                and isinstance(value, str)
+                and (self.max_length is None or len(value) <= self.max_length)
+            )
+            or (
+                self.field_type == "int"
+                and not isinstance(value, bool)
+                and isinstance(value, int)
+                and (self.min_value is None or value >= self.min_value)
+                and (self.max_value is None or value <= self.max_value)
+            )
+            or (
+                self.field_type == "choice"
+                and (value in self.options)
+                and not isinstance(value, bool)
+            )
+        )
 
 
 def build_default_settings() -> list[Setting]:

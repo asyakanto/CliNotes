@@ -23,7 +23,7 @@ def run_app(app: NotesApp) -> None:
     while True:
         mode: str = display_main_menu(app)
 
-        if mode.isdigit() and "." not in mode:
+        if mode.isdigit():
             created_note: Note | None = app.get_note(int(mode))
             if created_note:
                 open_note(app, created_note)

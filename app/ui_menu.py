@@ -36,8 +36,6 @@ def display_notes(notes: list[Note]) -> str:
 
 
 def get_notifications(app: NotesApp) -> str:
-    if not app._notifications:
-        return ""
 
     lines: list[str] = []
     for notification in app.pop_notifications():

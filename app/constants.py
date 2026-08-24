@@ -13,6 +13,8 @@ class Constants:
     FILE_NOTES: Final = "notes.json"
     FILE_SETTINGS: Final = "settings.json"
     FILE_LOG: Final = "app.log"
+    FILE_TEMP: Final = "temp.json"
+    TEMP_SETTINGS_FILE: Final = "tempSettings.json"
 
     # ── Defaults ─────────────────────────────
     DEFAULT_ARCHIVED_AT: Final = "0"
@@ -30,13 +32,14 @@ class Constants:
     KEY_TOGGLE_ARCHIVED: Final = "t"
     KEY_SETTINGS: Final = ","
 
-    # ── Keys (меню заметки) ─────────────────
+    # ── Keys ────────────────────────────────
     KEY_ARCHIVE: Final = "a"
     KEY_EDIT: Final = "e"
     KEY_EDIT_TITLE: Final = "t"
     KEY_EDIT_TEXT: Final = "i"
     KEY_RESTORE: Final = "r"
     KEY_DELETE: Final = "d"
+    KEY_PERCENT_QUIT: Final = "%q"
 
     # ── Actions ──────────────────────────────
     ACTION_QUIT: Final = "quit"
@@ -93,7 +96,6 @@ class Constants:
 
     # ── Search ─────────────────────────────
     KEY_SEARCH_HELP: Final = "%h"
-    KEY_SEARCH_QUIT: Final = "%q"
 
     # ── Dates ────────────────────────────────
     DATE_FORMAT_MAP: Final = {

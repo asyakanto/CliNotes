@@ -13,7 +13,7 @@ def create_note_scenario(app: NotesApp) -> None:
         title = prompt_input(
             hint="Title cannot be empty. Note Name", lowercase=False, danger=True
         )
-    if title == C.KEY_SEARCH_QUIT:
+    if title == C.KEY_PERCENT_QUIT:
         return
     text: str = prompt_input(hint="Text", lowercase=False)
     note: Note = app.create_note(title, text)
@@ -29,7 +29,7 @@ def search_scenario(app: NotesApp) -> None:
         query = prompt_input(
             hint=f"Enter a search query ({C.KEY_SEARCH_HELP} for help)"
         )
-    if query == C.KEY_SEARCH_QUIT:
+    if query == C.KEY_PERCENT_QUIT:
         return
     results: list[Note] = app.search_note(query)
     if not results:
@@ -49,7 +49,11 @@ def search_scenario(app: NotesApp) -> None:
             )
             if note_mode == C.KEY_QUIT:
                 break
-            if note_mode.isdigit() and "." not in note_mode:
+            if (
+                note_mode.isdigit()
+                and isinstance(note_mode, int)
+                and not isinstance(note_mode, bool)
+            ):
                 found_note: Note | None = app.get_note(int(note_mode))
                 if found_note in results:
                     open_note(app, found_note)
@@ -65,7 +69,7 @@ def search_help(prefixes: list[str]) -> str:
         ('title:"phrase"', "exact phrase in title"),
         ('text:"phrase"', "exact phrase in text"),
         ("", ""),
-        (C.KEY_SEARCH_QUIT, "quit search"),
+        (C.KEY_PERCENT_QUIT, "quit search"),
         ("", ""),
     ]
     Wid: int = max(len(l) for l, r in pairs)

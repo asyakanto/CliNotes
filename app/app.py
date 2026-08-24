@@ -36,7 +36,13 @@ class NotesApp:
     def _calculate_max_id(self) -> int:
         max_id: int = C.NO_NOTES_MAX_ID
         for note in self.notes:
-            if note.id is not None and note.id > max_id and "." not in str(note.id):
+            if (
+                note.id is not None
+                and not isinstance(note.id, bool)
+                and not isinstance(note.id, str)
+                and note.id > max_id
+                and isinstance(note.id, int)
+            ):
                 max_id = note.id
         return max_id
 
@@ -44,7 +50,13 @@ class NotesApp:
         ids: set[int] = set()
         duplicates_found: int = 0
         for note in self.notes:
-            if note.id is None or note.id < 0 or note.id in ids or "." in str(note.id):
+            if (
+                note.id is None
+                or not isinstance(note.id, int)
+                or isinstance(note.id, bool | str)
+                or note.id < 0
+                or note.id in ids
+            ):
                 self.max_id += 1
                 note.id = self.max_id
                 duplicates_found += 1
@@ -177,7 +189,9 @@ class NotesApp:
 
     # ── Settings ─────────────────────────────
     def save_settings(self) -> None:
-        self.storage.save_settings(self.settings)
+        result: str = self.storage.save_settings(self.settings)
+        if result:
+            self.add_notification(result)
 
     def reset_settings(self) -> None:
         self.settings.reset_all()
@@ -204,11 +218,13 @@ class NotesApp:
 
     # ── Saving ───────────────────────────────
     def save_notes(self) -> None:
-        self.storage.save(self.notes)
+        result: str = self.storage.save(self.notes)
+        if result:
+            self.add_notification(result)
 
     def _save_if_auto(self) -> None:
         if self.settings.get_bool_value(C.SETTING_AUTO_SAVE):
-            self.storage.save(self.notes)
+            self.save_notes()
 
     # ── Notifications ────────────────────────
 

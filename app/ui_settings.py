@@ -18,7 +18,7 @@ def show_settings_categories(app: NotesApp) -> str:
     header: str = get_header("Settings")
     hints: str = make_hint(
         "Actions: {ID} - open category; "
-        + f"{C.KEY_SEARCH_QUIT} - quit; {C.KEY_RESET_SETTINGS} - reset all settings"
+        + f"{C.KEY_PERCENT_QUIT} - quit; {C.KEY_RESET_SETTINGS} - reset all settings"
     )
     lines: list[str] = []
     for i, group in enumerate(app.settings.groups()):
@@ -34,7 +34,7 @@ def settings_interface(app: NotesApp) -> None:
         clear_screen()
         print(show_settings_categories(app))
         action: str = read_input()
-        if action == C.KEY_SEARCH_QUIT:
+        if action == C.KEY_PERCENT_QUIT:
             return
         elif action == C.KEY_RESET_SETTINGS:
             if (
@@ -51,7 +51,7 @@ def settings_interface(app: NotesApp) -> None:
                 app.apply_log_level()
                 app.apply_notes_path()
                 app.add_notification("Settings reset to defaults")
-        elif action.isdigit() and "." not in action:
+        elif action.isdigit():
             if 0 <= int(action) < len(groups):
                 settings_group_interface(app, groups[int(action)])
             else:
@@ -78,7 +78,7 @@ def show_settings_group(
         lines.append(str(i) + " - " + setting.label + " - " + make_cyan(value))
     body: str = "\n".join(lines)
     hints: str = make_hint(
-        "Actions: {ID} - change setting; " + f"{C.KEY_SEARCH_QUIT} - quit"
+        "Actions: {ID} - change setting; " + f"{C.KEY_PERCENT_QUIT} - quit"
     )
 
     return build_view(header, body, hints)
@@ -90,10 +90,10 @@ def settings_group_interface(app: NotesApp, group: str) -> None:
         clear_screen()
         print(show_settings_group(app, group, group_settings))
         action: str = read_input()
-        if action == C.KEY_SEARCH_QUIT:
+        if action == C.KEY_PERCENT_QUIT:
             app.save_settings()
             return
-        elif action.isdigit() and "." not in action:
+        elif action.isdigit():
             if 0 <= int(action) < len(group_settings):
                 edit_setting(app, group_settings[int(action)])
             else:
@@ -140,7 +140,7 @@ def _edit_str_setting(app: NotesApp, setting: Setting) -> None:
     else:
         clue = "Enter a text"
     value = prompt_input(hint=clue, lowercase=False)
-    if value == "%q":
+    if value == C.KEY_PERCENT_QUIT:
         return
     edited_str: bool = app.settings.set_value(setting.key, value)
     if not edited_str:
@@ -159,9 +159,9 @@ def _edit_int_setting(app: NotesApp, setting: Setting) -> None:
     else:
         clue += "Range: " + _range_clue(min_value, max_value)
     value = prompt_input(hint=clue, lowercase=False)
-    if value == "%q":
+    if value == C.KEY_PERCENT_QUIT:
         return
-    elif value.isdigit() and "." not in value:
+    elif value.isdigit() and isinstance(value, int) and not isinstance(value, bool):
         edited: bool = app.settings.set_value(setting.key, int(value))
         if not edited:
             pause(f"number is not in range {_range_clue(min_value, max_value)}")
@@ -173,9 +173,14 @@ def _edit_choice_setting(app: NotesApp, setting: Setting) -> None:
     choices: list[str | int] = [choice for choice in setting.options]
     _render_choice_page(setting, choices)
     value: str = read_input(lowercase=False)
-    if value == "%q":
+    if value == C.KEY_PERCENT_QUIT:
         return
-    elif value.isdigit() and "." not in value and 0 <= int(value) < len(choices):
+    elif (
+        value.isdigit()
+        and isinstance(value, int)
+        and not isinstance(value, bool)
+        and 0 <= int(value) < len(choices)
+    ):
         app.settings.set_value(setting.key, choices[int(value)])
         if setting.key == C.SETTING_LOG_LEVEL:
             app.apply_log_level()

@@ -51,6 +51,4 @@ def get_date_format(display_key: str) -> str:
 
 def has_easter_egg(text: str) -> bool:
 
-    return C.EASTER_EGG_CONDITIONS == [
-        condition for condition in C.EASTER_EGG_CONDITIONS if condition in text.lower()
-    ]
+    return all(condition in text.lower() for condition in C.EASTER_EGG_CONDITIONS)
