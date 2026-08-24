@@ -3,14 +3,12 @@ from app.constants import Constants as C
 from app.settings import Setting
 from app.ui_input import pause, prompt_input, read_input
 from app.ui_style import (
+    apply_settings,
     build_view,
     clear_screen,
     get_header,
     make_cyan,
     make_hint,
-    set_clear_screen_enabled,
-    set_colors_enabled,
-    set_hints_enabled,
 )
 
 
@@ -42,14 +40,7 @@ def settings_interface(app: NotesApp) -> None:
                 == "y"
             ):
                 app.reset_settings()
-                set_colors_enabled(app.settings.get_bool_value(C.SETTING_USE_COLORS))
-                set_clear_screen_enabled(
-                    app.settings.get_bool_value(C.SETTING_USE_CLEAR_SCREEN)
-                )
-                set_hints_enabled(app.settings.get_bool_value(C.SETTING_USE_HINTS))
-                app.sync_tags_if_enabled()
-                app.apply_log_level()
-                app.apply_notes_path()
+                apply_settings(app)
                 app.add_notification("Settings reset to defaults")
         elif action.isdigit():
             if 0 <= int(action) < len(groups):
@@ -117,20 +108,7 @@ def edit_setting(app: NotesApp, setting: Setting) -> None:
 
 def _edit_bool_setting(app: NotesApp, setting: Setting) -> None:
     app.settings.set_value(setting.key, not app.settings.get_bool_value(setting.key))
-    if setting.key == C.SETTING_USE_COLORS:
-        set_colors_enabled(app.settings.get_bool_value(C.SETTING_USE_COLORS))
-    if setting.key == C.SETTING_USE_CLEAR_SCREEN:
-        set_clear_screen_enabled(
-            app.settings.get_bool_value(C.SETTING_USE_CLEAR_SCREEN)
-        )
-    if setting.key == C.SETTING_USE_HINTS:
-        set_hints_enabled(app.settings.get_bool_value(C.SETTING_USE_HINTS))
-    if (
-        setting.key in C.TAG_PREFIX_SETTINGS
-        or setting.key == C.SETTING_AUTO_DATE_TAG
-        or setting.key == C.SETTING_AUTO_SYNC_TAGS
-    ):
-        app.sync_tags_if_enabled()
+    apply_settings(app, setting.key)
 
 
 def _edit_str_setting(app: NotesApp, setting: Setting) -> None:
@@ -143,11 +121,11 @@ def _edit_str_setting(app: NotesApp, setting: Setting) -> None:
     if value == C.KEY_PERCENT_QUIT:
         return
     edited_str: bool = app.settings.set_value(setting.key, value)
-    if not edited_str:
-        pause(f"Text length is over than {max_length} characters")
+    if edited_str:
+        apply_settings(app, setting.key)
 
-    if setting.key == C.SETTING_NOTES_PATH:
-        app.apply_notes_path()
+    else:
+        pause(f"Text length is over than {max_length} characters")
 
 
 def _edit_int_setting(app: NotesApp, setting: Setting) -> None:
@@ -161,9 +139,12 @@ def _edit_int_setting(app: NotesApp, setting: Setting) -> None:
     value = prompt_input(hint=clue, lowercase=False)
     if value == C.KEY_PERCENT_QUIT:
         return
-    elif value.isdigit() and isinstance(value, int) and not isinstance(value, bool):
+    elif value.isdigit():
         edited: bool = app.settings.set_value(setting.key, int(value))
-        if not edited:
+        if edited:
+            apply_settings(app, setting.key)
+
+        else:
             pause(f"number is not in range {_range_clue(min_value, max_value)}")
     else:
         pause("not a number")
@@ -175,15 +156,9 @@ def _edit_choice_setting(app: NotesApp, setting: Setting) -> None:
     value: str = read_input(lowercase=False)
     if value == C.KEY_PERCENT_QUIT:
         return
-    elif (
-        value.isdigit()
-        and isinstance(value, int)
-        and not isinstance(value, bool)
-        and 0 <= int(value) < len(choices)
-    ):
+    elif value.isdigit() and 0 <= int(value) < len(choices):
         app.settings.set_value(setting.key, choices[int(value)])
-        if setting.key == C.SETTING_LOG_LEVEL:
-            app.apply_log_level()
+        apply_settings(app, setting.key)
     else:
         pause("Wrong ID")
 

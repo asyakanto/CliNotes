@@ -1,6 +1,7 @@
 import shutil
 from os import name, system
 
+from app.app import NotesApp
 from app.constants import Constants as C
 
 _COLORS_ENABLED: bool = True
@@ -92,3 +93,25 @@ def clear_screen() -> None:
         system("cls")
     else:
         system("clear")
+
+
+def apply_settings(app: NotesApp, key: str | None = None) -> None:
+    if key is None or key == C.SETTING_USE_COLORS:
+        set_colors_enabled(app.settings.get_bool_value(C.SETTING_USE_COLORS))
+
+    if key is None or key == C.SETTING_USE_CLEAR_SCREEN:
+        set_clear_screen_enabled(
+            app.settings.get_bool_value(C.SETTING_USE_CLEAR_SCREEN)
+        )
+    if key is None or key == C.SETTING_USE_HINTS:
+        set_hints_enabled(app.settings.get_bool_value(C.SETTING_USE_HINTS))
+    if key is None or (
+        key in C.TAG_PREFIX_SETTINGS
+        or key == C.SETTING_AUTO_DATE_TAG
+        or key == C.SETTING_AUTO_SYNC_TAGS
+    ):
+        app.sync_tags_if_enabled()
+    if key is None or key == C.SETTING_NOTES_PATH:
+        app.apply_notes_path()
+    if key is None or key == C.SETTING_LOG_LEVEL:
+        app.apply_log_level()

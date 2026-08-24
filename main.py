@@ -10,10 +10,8 @@ from app.ui_note import open_note
 from app.ui_scenarios import create_note_scenario, search_scenario
 from app.ui_settings import settings_interface
 from app.ui_style import (
+    apply_settings,
     clear_screen,
-    set_clear_screen_enabled,
-    set_colors_enabled,
-    set_hints_enabled,
 )
 
 logger = logging.getLogger(__name__)
@@ -66,12 +64,7 @@ def main() -> None:
         )
     try:
         app: NotesApp = NotesApp()
-        app.apply_log_level()
-        set_colors_enabled(app.settings.get_bool_value(C.SETTING_USE_COLORS))
-        set_clear_screen_enabled(
-            app.settings.get_bool_value(C.SETTING_USE_CLEAR_SCREEN)
-        )
-        set_hints_enabled(app.settings.get_bool_value(C.SETTING_USE_HINTS))
+        apply_settings(app)
         logger.info("Application started")
     except KeyboardInterrupt:
         logger.info(

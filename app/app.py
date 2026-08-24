@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 
 from app.constants import Constants as C
-from app.models import Note, get_date, get_local_now, get_tags
+from app.models import Note, get_date, get_local_now, get_plural, get_tags
 from app.search import apply_filters, parse_query
 from app.settings import Settings
 from app.storage import Storage
@@ -62,12 +62,11 @@ class NotesApp:
                 duplicates_found += 1
             ids.add(note.id)
         if duplicates_found:
-            self.add_notification(
-                f"Fixed {duplicates_found} invalid {'IDs' if duplicates_found != 1 and duplicates_found != 0 else 'ID'}"
+            duplicate_message: str = (
+                f"Fixed {get_plural(duplicates_found, 'invalid ID')}"
             )
-            logger.warning(
-                f"Fixed {duplicates_found} invalid {'IDs' if duplicates_found != 1 and duplicates_found != 0 else 'ID'}"
-            )
+            self.add_notification(duplicate_message)
+            logger.warning(duplicate_message)
             self._save_if_auto()
         return self.notes
 
@@ -93,9 +92,7 @@ class NotesApp:
         notes_after_deleting: int = len(self.notes)
         if notes_after_deleting != notes_before_deleting:
             deleted: int = notes_before_deleting - notes_after_deleting
-            self.add_notification(
-                f"Deleted {deleted} expired {'notes' if (deleted != 1 and deleted != 0) else 'note'}"
-            )
+            self.add_notification(f"Deleted {get_plural(deleted, 'expired note')}")
         return self.notes
 
     # ── CRUD ─────────────────────────────────
@@ -171,9 +168,7 @@ class NotesApp:
                 counter += 1
 
         if counter > 0:
-            self.add_notification(
-                f"Updated {counter} note{'s' if counter != 1 else ''} tags"
-            )
+            self.add_notification(f"Updated {get_plural(counter, 'note')} tags")
             self._save_if_auto()
         return self.notes
 

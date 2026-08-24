@@ -1,6 +1,6 @@
 from app.app import NotesApp
 from app.constants import Constants as C
-from app.models import Note
+from app.models import Note, get_plural
 from app.ui_input import pause, prompt_input
 from app.ui_menu import display_notes, get_visible_notes
 from app.ui_note import open_note
@@ -37,11 +37,7 @@ def search_scenario(app: NotesApp) -> None:
     else:
         while True:
             clear_screen()
-            print(
-                get_header(
-                    f"Search results: {len(results)} {'notes' if len(results) != 1 and len(results) != 0 else 'note'}"
-                )
-            )
+            print(get_header(f"Search results: {get_plural(len(results), 'note')}"))
             print(display_notes(get_visible_notes(results, True)))
 
             note_mode: str = prompt_input(

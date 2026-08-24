@@ -1,6 +1,6 @@
 from app.app import NotesApp
 from app.constants import Constants as C
-from app.models import Note, get_date, get_local_now
+from app.models import Note, get_date, get_local_now, get_plural
 from app.ui_input import read_input
 from app.ui_style import (
     build_view,
@@ -48,7 +48,7 @@ def show_main_menu(app: NotesApp) -> str:
         app.notes, app.settings.get_bool_value(C.SETTING_SHOW_ARCHIVED)
     )
     header: str = get_header(
-        f"CliNotes: {get_date(get_local_now(), app.settings.date_pattern())} · {len(visible_notes)} {'notes' if len(visible_notes) != 1 and len(visible_notes) != 0 else 'note'}"
+        f"CliNotes: {get_date(get_local_now(), app.settings.date_pattern())} · {get_plural(len(visible_notes), 'note')}"
     )
     body: str = "\n\n".join(
         section

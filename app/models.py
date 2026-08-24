@@ -52,3 +52,9 @@ def get_date_format(display_key: str) -> str:
 def has_easter_egg(text: str) -> bool:
 
     return all(condition in text.lower() for condition in C.EASTER_EGG_CONDITIONS)
+
+
+def get_plural(num: int, string: str) -> str:
+    if num == 1:
+        return f"{num} {string}"
+    return f"{num} {string}s"
