@@ -13,8 +13,8 @@ class Settings:
         self._config: dict[str, Setting] = {s.key: s for s in build_default_settings()}
 
     def _get_value(self, key: str) -> int | bool | str | None:
-        setting: Setting | None = self._config.get(key)
-        if setting is None:
+        setting: Setting | None
+        if (setting := self._config.get(key)) is None:
             raise KeyError(f"Settings key '{key}' not found in configuration")
         return setting.value
 
@@ -43,8 +43,8 @@ class Settings:
         )
 
     def set_value(self, key: str, value: bool | str | int) -> bool:
-        setting: Setting | None = self._config.get(key)
-        if setting is None:
+        setting: Setting | None
+        if (setting := self._config.get(key)) is None:
             raise KeyError(f"Settings key '{key}' not found in configuration")
         if setting.validate(value):
             setting.value = value
@@ -56,14 +56,14 @@ class Settings:
 
     def dict_to_settings(self, settings_dict: dict[str, Any]) -> None:
         for key, value in settings_dict.items():
-            setting: Setting | None = self._config.get(key)
-            if setting is None:
-                logger.warning(f"Unknown setting key '{key}' ignored")
+            setting: Setting | None
+            if (setting := self._config.get(key)) is None:
+                logger.warning("Unknown setting key '%s' ignored", key)
                 continue
             if setting.validate(value):
                 setting.value = value
             else:
-                logger.warning(f"Invalid value '{value}' for setting '{key}' ")
+                logger.warning("Invalid value '%s' for setting '%s' ", value, key)
 
     def date_pattern(self) -> str:
         value: str = self.get_str_value(C.DATE_FORMAT_SETTING)
@@ -90,7 +90,7 @@ class Settings:
             setting.value = setting.default
 
     def reset_setting(self, key: str) -> None:
-        setting: Setting | None = self._config.get(key)
-        if setting is None:
+        setting: Setting | None
+        if (setting := self._config.get(key)) is None:
             raise KeyError(f"Settings key '{key}' not found in configuration")
         self.set_value(key, setting.default)

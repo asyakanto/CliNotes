@@ -33,10 +33,10 @@ class Storage:
         try:
             with open(self.NOTE_PATH, encoding="utf-8") as file:
                 notes: list[dict[str, Any]] = load(file)
-                logger.info(f"Loaded {len(notes)} notes")
+                logger.info("Loaded %s notes", len(notes))
                 return notes
         except FileNotFoundError:
-            logger.warning(f"Notes file not found, creating new: {self.NOTE_PATH}")
+            logger.warning("Notes file not found, creating new: %s", self.NOTE_PATH)
             return []
         except JSONDecodeError:
             logger.error("JSON corrupted, starting fresh")
@@ -48,19 +48,21 @@ class Storage:
             with open(self.TEMP_PATH, "w", encoding="utf-8") as file:
                 dump(notes_serialized, file, ensure_ascii=False, indent=2)
             os.replace(self.TEMP_PATH, self.NOTE_PATH)
-            logger.info(f"Saved {len(notes)} notes")
+            logger.info("Saved %s notes", len(notes))
         except OSError as e:
             logger.error(
-                f"Failed to replace file {self.TEMP_PATH} -> {self.NOTE_PATH}: {e}"
+                "Failed to replace file %s -> %s: %s", self.TEMP_PATH, self.NOTE_PATH, e
             )
             return "Failed to save notes. Details in the app.log"
         finally:
             try:
                 if os.path.exists(self.TEMP_PATH):
                     os.remove(self.TEMP_PATH)
-                    logger.debug(f"Cleaned up temporary file: {self.TEMP_PATH}")
+                    logger.debug("Cleaned up temporary file: %s", self.TEMP_PATH)
             except OSError as e:
-                logger.warning(f"Failed to delete temporary file {self.TEMP_PATH}: {e}")
+                logger.warning(
+                    "Failed to delete temporary file %s: %s", self.TEMP_PATH, e
+                )
 
         return ""
 
@@ -72,7 +74,7 @@ class Storage:
                 settings.dict_to_settings(setting_dict)
                 return settings
         except FileNotFoundError:
-            logger.warning(f"Settings file not found: {self.SETTINGS_PATH}")
+            logger.warning("Settings file not found: %s", self.SETTINGS_PATH)
             return Settings()
         except JSONDecodeError:
             logger.error("JSON corrupted, starting fresh")
@@ -86,17 +88,20 @@ class Storage:
             logger.info("Settings changed and saved successfully")
         except OSError as e:
             logger.error(
-                f"Failed to replace file {self.TEMP_SETTINGS} -> {self.SETTINGS_PATH}: {e}"
+                "Failed to replace file %s -> %s: %s",
+                self.TEMP_SETTINGS,
+                self.SETTINGS_PATH,
+                e,
             )
             return "Failed to save settings. Details in the app.log"
         finally:
             try:
                 if os.path.exists(self.TEMP_SETTINGS):
                     os.remove(self.TEMP_SETTINGS)
-                    logger.debug(f"Cleaned up temporary file: {self.TEMP_PATH}")
+                    logger.debug("Cleaned up temporary file: %s", self.TEMP_PATH)
             except OSError as e:
                 logger.warning(
-                    f"Failed to delete temporary file {self.TEMP_SETTINGS}: {e}"
+                    "Failed to delete temporary file %s: %s", self.TEMP_SETTINGS, e
                 )
 
         return ""

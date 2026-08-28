@@ -9,34 +9,31 @@ from app.ui_menu import display_main_menu
 from app.ui_note import open_note
 from app.ui_scenarios import create_note_scenario, search_scenario
 from app.ui_settings import settings_interface
-from app.ui_style import (
-    apply_settings,
-    clear_screen,
-)
+from app.ui_style import StyleConfig, apply_settings, clear_screen
 
 logger = logging.getLogger(__name__)
 
 
-def run_app(app: NotesApp) -> None:
+def run_app(app: NotesApp, style_config: StyleConfig) -> None:
     while True:
-        mode: str = display_main_menu(app)
+        mode: str = display_main_menu(app, style_config)
 
         if mode.isdigit():
             created_note: Note | None = app.get_note(int(mode))
             if created_note:
-                open_note(app, created_note)
+                open_note(app, created_note, style_config)
 
         elif mode == C.KEY_QUIT:
             logger.info("Application closed")
-            clear_screen()
+            clear_screen(style_config)
             app.save_notes()
             return
 
         elif mode == C.KEY_CREATE:
-            create_note_scenario(app)
+            create_note_scenario(app, style_config)
 
         elif mode == C.KEY_SEARCH:
-            search_scenario(app)
+            search_scenario(app, style_config)
         elif mode == C.KEY_TOGGLE_ARCHIVED:
             app.settings.set_value(
                 C.SETTING_SHOW_ARCHIVED,
@@ -44,7 +41,7 @@ def run_app(app: NotesApp) -> None:
             )
             app.save_settings()
         elif mode == C.KEY_SETTINGS:
-            settings_interface(app)
+            settings_interface(app, style_config)
 
 
 def main() -> None:
@@ -64,7 +61,8 @@ def main() -> None:
         )
     try:
         app: NotesApp = NotesApp()
-        apply_settings(app)
+        style_config: StyleConfig = StyleConfig()
+        apply_settings(app, style_config)
         logger.info("Application started")
     except KeyboardInterrupt:
         logger.info(
@@ -73,18 +71,18 @@ def main() -> None:
         return
     except Exception:
         logger.exception("Fatal error")
-        pause("An error occurred. Details in the app.log")
+        pause("An error occurred. Details in the app.log", style_config)
         return
 
     try:
-        run_app(app)
+        run_app(app, style_config)
     except KeyboardInterrupt:
         app.save_notes()
         logger.info("Application interrupted by user")
         return
     except Exception:
         logger.exception("Fatal error")
-        pause("An error occurred. Details in the app.log")
+        pause("An error occurred. Details in the app.log", style_config)
         return
 
 

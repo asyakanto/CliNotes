@@ -1,11 +1,10 @@
 [project]
 name = "clinotes"
 version = "0.1.0"
-description = "Add your description here"
+description = "Simple CLI Notes App"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
-    "mypy>=2.1.0",
     "prompt-toolkit>=3.0.52",
 ]
 
@@ -16,3 +15,8 @@ dev = [
 
 [tool.ruff.lint]
 ignore = ["EXE002"]
+extend-select = ["I", "B", "UP", "SIM", "C4", "G", "DTZ"]
+
+[mypy]
+strict = true
+explicit_package_bases = true

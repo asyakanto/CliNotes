@@ -108,7 +108,7 @@ class NotesApp:
             created=created,
         )
         self.notes.append(note)
-        logger.info(f"Note created: #{note.id}: {note.title}")
+        logger.info("Note created: #%s: %s", note.id, note.title)
         self._save_if_auto()
         return note
 
@@ -130,7 +130,7 @@ class NotesApp:
     def archive_note(self, note: Note) -> Note:
         note.archived = True
         note.archived_at = get_date(get_local_now(), C.DATE_FORMAT_STORAGE)
-        logger.info(f"Note archived: #{note.id}: {note.title}")
+        logger.info("Note archived: #%s: %s", note.id, note.title)
         self._save_if_auto()
         return note
 
