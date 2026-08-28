@@ -1,6 +1,7 @@
 import re
 from dataclasses import dataclass
 from datetime import datetime
+from typing import TypedDict
 
 from app.constants import Constants as C
 
@@ -14,6 +15,16 @@ class Note:
     id: int | None = None
     archived: bool = False
     archived_at: str = C.DEFAULT_ARCHIVED_AT
+
+
+class NoteDict(TypedDict):
+    title: str
+    text: str
+    tags: list[str]
+    created: str
+    id: int | None
+    archived: bool
+    archived_at: str
 
 
 def get_date(dt: datetime, date_format: str) -> str:

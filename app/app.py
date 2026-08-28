@@ -204,12 +204,18 @@ class NotesApp:
     def apply_log_level(self) -> None:
         level: str = self.settings.get_str_value(C.SETTING_LOG_LEVEL)
         logger: logging.Logger = logging.getLogger()
-        if level == C.LOG_LEVELS[0]:
-            logger.setLevel(logging.CRITICAL + 1)
-        elif level == C.LOG_LEVELS[1]:
-            logger.setLevel(logging.ERROR)
-        elif level == C.LOG_LEVELS[2]:
-            logger.setLevel(logging.DEBUG)
+        logger_level: int | None = C.LOG_LEVEL_MAP.get(level)
+        if logger_level is not None:
+            logger.setLevel(logger_level)
+        else:
+            logger.warning("Unknown logging level: %s", level)
+
+    def toggle_show_archived(self) -> None:
+        self.settings.set_value(
+            C.SETTING_SHOW_ARCHIVED,
+            not self.settings.get_bool_value(C.SETTING_SHOW_ARCHIVED),
+        )
+        self.save_settings()
 
     # ── Saving ───────────────────────────────
     def save_notes(self) -> None:

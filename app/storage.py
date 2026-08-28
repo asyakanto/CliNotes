@@ -11,7 +11,7 @@ from app.constants import Constants as C
 from app.settings import Settings
 
 if TYPE_CHECKING:
-    from app.models import Note
+    from app.models import Note, NoteDict
 
 logger = logging.getLogger(__name__)
 
@@ -29,10 +29,10 @@ class Storage:
         self.SETTINGS_PATH = Path(__file__).parent.parent / C.FILE_SETTINGS
         self.TEMP_SETTINGS = Path(__file__).parent.parent / C.TEMP_SETTINGS_FILE
 
-    def load(self) -> list[dict[str, Any]]:
+    def load(self) -> list[NoteDict]:
         try:
             with open(self.NOTE_PATH, encoding="utf-8") as file:
-                notes: list[dict[str, Any]] = load(file)
+                notes: list[NoteDict] = load(file)
                 logger.info("Loaded %s notes", len(notes))
                 return notes
         except FileNotFoundError:

@@ -1,5 +1,6 @@
 import logging
 import sys
+from collections.abc import Callable
 
 from app.app import NotesApp
 from app.constants import Constants as C
@@ -15,6 +16,11 @@ logger = logging.getLogger(__name__)
 
 
 def run_app(app: NotesApp, style_config: StyleConfig) -> None:
+    action_table: dict[str, Callable[[NotesApp, StyleConfig], None]] = {
+        C.KEY_CREATE: create_note_scenario,
+        C.KEY_SEARCH: search_scenario,
+        C.KEY_SETTINGS: settings_interface,
+    }
     while True:
         mode: str = display_main_menu(app, style_config)
 
@@ -28,20 +34,10 @@ def run_app(app: NotesApp, style_config: StyleConfig) -> None:
             clear_screen(style_config)
             app.save_notes()
             return
-
-        elif mode == C.KEY_CREATE:
-            create_note_scenario(app, style_config)
-
-        elif mode == C.KEY_SEARCH:
-            search_scenario(app, style_config)
         elif mode == C.KEY_TOGGLE_ARCHIVED:
-            app.settings.set_value(
-                C.SETTING_SHOW_ARCHIVED,
-                not app.settings.get_bool_value(C.SETTING_SHOW_ARCHIVED),
-            )
-            app.save_settings()
-        elif mode == C.KEY_SETTINGS:
-            settings_interface(app, style_config)
+            app.toggle_show_archived()
+        elif mode in action_table:
+            action_table[mode](app, style_config)
 
 
 def main() -> None:
@@ -84,7 +80,3 @@ def main() -> None:
         logger.exception("Fatal error")
         pause("An error occurred. Details in the app.log", style_config)
         return
-
-
-if __name__ == "__main__":
-    main()
