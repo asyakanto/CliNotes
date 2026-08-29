@@ -16,6 +16,7 @@ class Constants:
     FILE_LOG: Final[str] = "app.log"
     FILE_TEMP: Final[str] = "temp.json"
     TEMP_SETTINGS_FILE: Final[str] = "tempSettings.json"
+    DATA_DIR_NAME: Final[str] = "clinotes"
 
     # ── Defaults ─────────────────────────────
     DEFAULT_ARCHIVED_AT: Final[str] = "0"
@@ -64,6 +65,16 @@ class Constants:
     NO_NOTES_MAX_ID: Final = -1
 
     # ── Settings ─────────────────────────────
+    FIELD_TYPE_BOOL: Final[str] = "bool"
+    FIELD_TYPE_STR: Final[str] = "str"
+    FIELD_TYPE_INT: Final[str] = "int"
+    FIELD_TYPE_CHOICE: Final[str] = "choice"
+
+    GROUP_DISPLAY: Final[str] = "display"
+    GROUP_ARCHIVING: Final[str] = "archiving/deleting"
+    GROUP_CREATING: Final[str] = "creating a note"
+    GROUP_INTERFACE: Final[str] = "interface"
+    GROUP_SYSTEM: Final[str] = "system"
 
     KEY_RESET_SETTINGS: Final[str] = "r"
 

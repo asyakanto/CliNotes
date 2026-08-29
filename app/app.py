@@ -22,7 +22,6 @@ class NotesApp:
         self.storage = Storage()
         self.settings = self.storage.load_settings()
         self.apply_notes_path()
-        self._load_notes()
 
     def _load_notes(self) -> None:
         self.notes = [Note(**n) for n in self.storage.load()]

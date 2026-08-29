@@ -5,6 +5,7 @@ from collections.abc import Callable
 from app.app import NotesApp
 from app.constants import Constants as C
 from app.models import Note
+from app.paths import data_dir
 from app.ui_input import pause
 from app.ui_menu import display_main_menu
 from app.ui_note import open_note
@@ -42,11 +43,12 @@ def run_app(app: NotesApp, style_config: StyleConfig) -> None:
 
 def main() -> None:
     try:
+        data_dir().mkdir(parents=True, exist_ok=True)
         logging.basicConfig(
             level=logging.INFO,
             format="%(asctime)s [%(levelname)s] %(message)s",
             handlers=[
-                logging.FileHandler(C.FILE_LOG),
+                logging.FileHandler(data_dir() / C.FILE_LOG),
             ],
         )
     except OSError:
@@ -58,7 +60,7 @@ def main() -> None:
     try:
         app: NotesApp = NotesApp()
         style_config: StyleConfig = StyleConfig()
-        apply_settings(app, style_config)
+        apply_settings(app, style_config, start=True)
         logger.info("Application started")
     except KeyboardInterrupt:
         logger.info(
@@ -67,7 +69,7 @@ def main() -> None:
         return
     except Exception:
         logger.exception("Fatal error")
-        pause("An error occurred. Details in the app.log", style_config)
+        pause(f"An error occurred. Details in the {C.FILE_LOG}", style_config)
         return
 
     try:
@@ -78,5 +80,5 @@ def main() -> None:
         return
     except Exception:
         logger.exception("Fatal error")
-        pause("An error occurred. Details in the app.log", style_config)
+        pause(f"An error occurred. Details in the {C.FILE_LOG}", style_config)
         return

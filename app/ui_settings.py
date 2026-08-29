@@ -108,13 +108,13 @@ def settings_group_interface(
 
 def edit_setting(app: NotesApp, setting: Setting, style_config: StyleConfig) -> None:
     match setting.field_type:
-        case "bool":
+        case C.FIELD_TYPE_BOOL:
             _edit_bool_setting(app, setting, style_config)
-        case "int":
+        case C.FIELD_TYPE_INT:
             _edit_int_setting(app, setting, style_config)
-        case "str":
+        case C.FIELD_TYPE_STR:
             _edit_str_setting(app, setting, style_config)
-        case "choice":
+        case C.FIELD_TYPE_CHOICE:
             _edit_choice_setting(app, setting, style_config)
 
 

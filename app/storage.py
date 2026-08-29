@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from app.constants import Constants as C
+from app.paths import data_dir
 from app.settings import Settings
 
 if TYPE_CHECKING:
@@ -21,13 +22,14 @@ class Storage:
     SETTINGS_PATH: Path
     TEMP_PATH: Path
     TEMP_SETTINGS: Path
-    root: Path = Path(__file__).parent.parent
 
     def __init__(self) -> None:
-        self.NOTE_PATH = Path(__file__).parent.parent / C.FILE_NOTES
-        self.TEMP_PATH = Path(__file__).parent.parent / C.FILE_TEMP
-        self.SETTINGS_PATH = Path(__file__).parent.parent / C.FILE_SETTINGS
-        self.TEMP_SETTINGS = Path(__file__).parent.parent / C.TEMP_SETTINGS_FILE
+        self.root: Path = data_dir()
+        self.root.mkdir(parents=True, exist_ok=True)
+        self.NOTE_PATH = self.root / C.FILE_NOTES
+        self.TEMP_PATH = self.root / C.FILE_TEMP
+        self.SETTINGS_PATH = self.root / C.FILE_SETTINGS
+        self.TEMP_SETTINGS = self.root / C.TEMP_SETTINGS_FILE
 
     def load(self) -> list[NoteDict]:
         try:
@@ -45,6 +47,7 @@ class Storage:
     def save(self, notes: list[Note]) -> str:
         try:
             notes_serialized: list[dict[str, Any]] = [asdict(note) for note in notes]
+            self.root.mkdir(parents=True, exist_ok=True)
             with open(self.TEMP_PATH, "w", encoding="utf-8") as file:
                 dump(notes_serialized, file, ensure_ascii=False, indent=2)
             os.replace(self.TEMP_PATH, self.NOTE_PATH)
@@ -53,7 +56,7 @@ class Storage:
             logger.error(
                 "Failed to replace file %s -> %s: %s", self.TEMP_PATH, self.NOTE_PATH, e
             )
-            return "Failed to save notes. Details in the app.log"
+            return f"Failed to save notes. Details in {C.FILE_LOG}"
         finally:
             try:
                 if os.path.exists(self.TEMP_PATH):
@@ -82,6 +85,7 @@ class Storage:
 
     def save_settings(self, settings: Settings) -> str:
         try:
+            self.root.mkdir(parents=True, exist_ok=True)
             with open(self.TEMP_SETTINGS, "w", encoding="utf-8") as file:
                 dump(settings.settings_to_dict(), file, ensure_ascii=False, indent=2)
             os.replace(self.TEMP_SETTINGS, self.SETTINGS_PATH)
@@ -93,7 +97,7 @@ class Storage:
                 self.SETTINGS_PATH,
                 e,
             )
-            return "Failed to save settings. Details in the app.log"
+            return f"Failed to save settings. Details in the {C.FILE_LOG}"
         finally:
             try:
                 if os.path.exists(self.TEMP_SETTINGS):

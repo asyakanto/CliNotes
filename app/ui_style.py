@@ -84,7 +84,9 @@ def clear_screen(config: StyleConfig) -> None:
         system("clear")
 
 
-def apply_settings(app: NotesApp, config: StyleConfig, key: str | None = None) -> None:
+def apply_settings(
+    app: NotesApp, config: StyleConfig, key: str | None = None, start: bool = False
+) -> None:
     if key is None or key == C.SETTING_USE_COLORS:
         config.colors = app.settings.get_bool_value(C.SETTING_USE_COLORS)
 
@@ -98,7 +100,7 @@ def apply_settings(app: NotesApp, config: StyleConfig, key: str | None = None) -
         or key == C.SETTING_AUTO_SYNC_TAGS
     ):
         app.sync_tags_if_enabled()
-    if key is None or key == C.SETTING_NOTES_PATH:
+    if (key is None or key == C.SETTING_NOTES_PATH) and not start:
         app.apply_notes_path()
     if key is None or key == C.SETTING_LOG_LEVEL:
         app.apply_log_level()
