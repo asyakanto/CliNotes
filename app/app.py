@@ -49,13 +49,7 @@ class NotesApp:
         ids: set[int] = set()
         duplicates_found: int = 0
         for note in self.notes:
-            if (
-                note.id is None
-                or not isinstance(note.id, int)
-                or isinstance(note.id, bool | str)
-                or note.id < 0
-                or note.id in ids
-            ):
+            if note.id is None or note.id < 0 or note.id in ids:
                 self.max_id += 1
                 note.id = self.max_id
                 duplicates_found += 1

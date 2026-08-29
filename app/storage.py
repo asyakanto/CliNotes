@@ -31,43 +31,111 @@ class Storage:
         self.SETTINGS_PATH = self.root / C.FILE_SETTINGS
         self.TEMP_SETTINGS = self.root / C.TEMP_SETTINGS_FILE
 
+    def _atomic_write(
+        self,
+        temp_path: Path,
+        final_path: Path,
+        data: object,
+        success_msg: str,
+        error_msg: str,
+    ) -> str:
+        try:
+            final_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(temp_path, "w", encoding="utf-8") as file:
+                dump(data, file, ensure_ascii=False, indent=2)
+            os.replace(temp_path, final_path)
+            logger.info(success_msg)
+        except OSError as e:
+            logger.error(
+                "Failed to replace file %s -> %s: %s", temp_path, final_path, e
+            )
+            return error_msg
+        finally:
+            try:
+                if os.path.exists(temp_path):
+                    os.remove(temp_path)
+                    logger.debug("Cleaned up temporary file: %s", temp_path)
+            except OSError as e:
+                logger.warning("Failed to delete temporary file %s: %s", temp_path, e)
+        return ""
+
+    def _is_valid_note_raw(self, item: object) -> NoteDict | None:
+        if not isinstance(item, dict):
+            return None
+        title: Any | None = item.get("title")
+        text: Any | None = item.get("text")
+        tags: Any | None = item.get("tags")
+        created: Any | None = item.get("created")
+        id: Any | None = item.get("id")
+        archived: Any | None = item.get("archived")
+        archived_at: Any | None = item.get("archived_at")
+        if (
+            title is None
+            or text is None
+            or tags is None
+            or id is None
+            or archived is None
+            or archived_at is None
+            or created is None
+        ):
+            return None
+
+        if not isinstance(title, str):
+            return None
+        if not isinstance(text, str):
+            return None
+        if not isinstance(tags, list):
+            return None
+        if not all(isinstance(t, str) for t in tags):
+            return None
+        if not (id is None or (isinstance(id, int) and not isinstance(id, bool))):
+            return None
+        if not isinstance(archived, bool):
+            return None
+        if not isinstance(archived_at, str):
+            return None
+        if not isinstance(created, str):
+            return None
+
+        return {
+            "title": title,
+            "text": text,
+            "tags": tags,
+            "created": created,
+            "id": id,
+            "archived": archived,
+            "archived_at": archived_at,
+        }
+
     def load(self) -> list[NoteDict]:
         try:
             with open(self.NOTE_PATH, encoding="utf-8") as file:
-                notes: list[NoteDict] = load(file)
-                logger.info("Loaded %s notes", len(notes))
-                return notes
+                raw: Any = load(file)
         except FileNotFoundError:
             logger.warning("Notes file not found, creating new: %s", self.NOTE_PATH)
             return []
         except JSONDecodeError:
             logger.error("JSON corrupted, starting fresh")
             return []
+        if not isinstance(raw, list):
+            logger.error("Notes data is not a list")
+            return []
+        notes: list[NoteDict] = []
+        for item in raw:
+            result: None | NoteDict = self._is_valid_note_raw(item)
+            if result is None:
+                logger.warning("Skipping invalid note")
+            else:
+                notes.append(result)
+        return notes
 
     def save(self, notes: list[Note]) -> str:
-        try:
-            notes_serialized: list[dict[str, Any]] = [asdict(note) for note in notes]
-            self.root.mkdir(parents=True, exist_ok=True)
-            with open(self.TEMP_PATH, "w", encoding="utf-8") as file:
-                dump(notes_serialized, file, ensure_ascii=False, indent=2)
-            os.replace(self.TEMP_PATH, self.NOTE_PATH)
-            logger.info("Saved %s notes", len(notes))
-        except OSError as e:
-            logger.error(
-                "Failed to replace file %s -> %s: %s", self.TEMP_PATH, self.NOTE_PATH, e
-            )
-            return f"Failed to save notes. Details in {C.FILE_LOG}"
-        finally:
-            try:
-                if os.path.exists(self.TEMP_PATH):
-                    os.remove(self.TEMP_PATH)
-                    logger.debug("Cleaned up temporary file: %s", self.TEMP_PATH)
-            except OSError as e:
-                logger.warning(
-                    "Failed to delete temporary file %s: %s", self.TEMP_PATH, e
-                )
-
-        return ""
+        notes_serialized: list[dict[str, Any]] = [asdict(note) for note in notes]
+        success_msg: str = f"Saved {len(notes)} notes"
+        failed_msg: str = f"Failed to save notes. Details in {C.FILE_LOG}"
+        return self._atomic_write(
+            self.TEMP_PATH, self.NOTE_PATH, notes_serialized, success_msg, failed_msg
+        )
 
     def load_settings(self) -> Settings:
         try:
@@ -84,31 +152,13 @@ class Storage:
             return Settings()
 
     def save_settings(self, settings: Settings) -> str:
-        try:
-            self.root.mkdir(parents=True, exist_ok=True)
-            with open(self.TEMP_SETTINGS, "w", encoding="utf-8") as file:
-                dump(settings.settings_to_dict(), file, ensure_ascii=False, indent=2)
-            os.replace(self.TEMP_SETTINGS, self.SETTINGS_PATH)
-            logger.info("Settings changed and saved successfully")
-        except OSError as e:
-            logger.error(
-                "Failed to replace file %s -> %s: %s",
-                self.TEMP_SETTINGS,
-                self.SETTINGS_PATH,
-                e,
-            )
-            return f"Failed to save settings. Details in the {C.FILE_LOG}"
-        finally:
-            try:
-                if os.path.exists(self.TEMP_SETTINGS):
-                    os.remove(self.TEMP_SETTINGS)
-                    logger.debug("Cleaned up temporary file: %s", self.TEMP_PATH)
-            except OSError as e:
-                logger.warning(
-                    "Failed to delete temporary file %s: %s", self.TEMP_SETTINGS, e
-                )
-
-        return ""
+        return self._atomic_write(
+            self.TEMP_SETTINGS,
+            self.SETTINGS_PATH,
+            settings.settings_to_dict(),
+            "Settings changed and saved successfully",
+            f"Failed to save settings. Details in the {C.FILE_LOG}",
+        )
 
     def update_notes_path(self, settings: Settings) -> bool:
         str_path: str = settings.get_str_value(C.SETTING_NOTES_PATH)

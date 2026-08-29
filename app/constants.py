@@ -113,9 +113,9 @@ class Constants:
     LOG_LEVELS: Final[list[str]] = ["off", "low", "high"]
     LOG_OFF: Final[int] = logging.CRITICAL + 1
     LOG_LEVEL_MAP: Final[dict[str, int]] = {
-        LOG_LEVELS[0]: LOG_OFF,
-        LOG_LEVELS[1]: logging.ERROR,
-        LOG_LEVELS[2]: logging.DEBUG,
+        "off": LOG_OFF,
+        "low": logging.ERROR,
+        "high": logging.DEBUG,
     }
 
     # ── Search ─────────────────────────────
