@@ -15,8 +15,7 @@ dev = [
 ]
 
 [tool.ruff.lint]
-ignore = ["EXE002"]
-extend-select = ["I", "B", "UP", "SIM", "C4", "G", "DTZ"]
+extend-select = ["YTT", "ASYNC", "S", "BLE", "B", "C4", "DTZ", "T10", "EXE", "FA", "INT", "ISC", "LOG", "G", "PIE", "PYI", "PT", "RET", "SIM", "TC", "PTH", "FLY", "I", "N", "PERF", "E", "W", "D", "F", "PGH", "PL", "UP", "FURB", "RUF", "TRY"]
 
 [tool.mypy]
 strict = true

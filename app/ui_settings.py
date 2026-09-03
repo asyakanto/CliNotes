@@ -17,7 +17,7 @@ def show_settings_categories(app: NotesApp, style_config: StyleConfig) -> str:
     header: str = get_header("Settings", style_config)
     hints: str = make_hint(
         "Actions: {ID} - open category; "
-        + f"{C.KEY_PERCENT_QUIT} - quit; {C.KEY_RESET_SETTINGS} - reset all settings",
+         f"{C.KEY_PERCENT_QUIT} - quit; {C.KEY_RESET_SETTINGS} - reset all settings",
         style_config,
     )
     lines: list[str] = []
@@ -36,7 +36,7 @@ def settings_interface(app: NotesApp, style_config: StyleConfig) -> None:
         action: str = read_input()
         if action == C.KEY_PERCENT_QUIT:
             return
-        elif action == C.KEY_RESET_SETTINGS:
+        if action == C.KEY_RESET_SETTINGS:
             if (
                 prompt_input(
                     "Reset all settings? (y/n)",
@@ -96,7 +96,7 @@ def settings_group_interface(
         if action == C.KEY_PERCENT_QUIT:
             app.save_settings()
             return
-        elif action.isdigit():
+        if action.isdigit():
             if 0 <= int(action) < len(group_settings):
                 edit_setting(app, group_settings[int(action)], style_config)
             else:
@@ -157,7 +157,7 @@ def _edit_int_setting(
     value = prompt_input(hint=clue, lowercase=False, style_config=style_config)
     if value == C.KEY_PERCENT_QUIT:
         return
-    elif value.isdigit():
+    if value.isdigit():
         edited: bool = app.settings.set_value(setting.key, int(value))
         if edited:
             apply_settings(app, style_config, setting.key)
@@ -179,7 +179,7 @@ def _edit_choice_setting(
     value: str = read_input(lowercase=False)
     if value == C.KEY_PERCENT_QUIT:
         return
-    elif value.isdigit() and 0 <= int(value) < len(choices):
+    if value.isdigit() and 0 <= int(value) < len(choices):
         app.settings.set_value(setting.key, choices[int(value)])
         apply_settings(app, style_config, setting.key)
     else:

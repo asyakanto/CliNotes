@@ -27,7 +27,7 @@ def show_note(note: Note, app: NotesApp, style_config: StyleConfig) -> str:
         str(note.id) + " #: " + ", ".join(note.tags) + "\n\n", style_config
     )
     body += (
-        note.text if note.text else app.settings.get_str_value(C.SETTING_DEFAULT_TEXT)
+        note.text or app.settings.get_str_value(C.SETTING_DEFAULT_TEXT)
     )
     hints: str = (
         make_hint(

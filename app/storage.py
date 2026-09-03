@@ -122,7 +122,7 @@ class Storage:
             return []
         notes: list[NoteDict] = []
         for item in raw:
-            result: None | NoteDict = self._is_valid_note_raw(item)
+            result: NoteDict | None = self._is_valid_note_raw(item)
             if result is None:
                 logger.warning("Skipping invalid note")
             else:

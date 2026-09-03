@@ -63,7 +63,7 @@ def show_main_menu(app: NotesApp, style_config: StyleConfig) -> str:
 
     hints: str = make_hint(
         "Actions: {ID}"
-        + f" - open note; {C.KEY_QUIT} - quit; {C.KEY_CREATE} - create; {C.KEY_SEARCH} - search; {C.KEY_TOGGLE_ARCHIVED} - show archived; {C.KEY_SETTINGS} - settings",
+         f" - open note; {C.KEY_QUIT} - quit; {C.KEY_CREATE} - create; {C.KEY_SEARCH} - search; {C.KEY_TOGGLE_ARCHIVED} - show archived; {C.KEY_SETTINGS} - settings",
         style_config,
     )
 
