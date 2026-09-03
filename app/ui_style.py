@@ -95,9 +95,9 @@ def apply_settings(
     if key is None or key == C.SETTING_USE_HINTS:
         config.hints = app.settings.get_bool_value(C.SETTING_USE_HINTS)
     if key is None or (
-        key in C.TAG_PREFIX_SETTINGS
-        or key == C.SETTING_AUTO_DATE_TAG
-        or key == C.SETTING_AUTO_SYNC_TAGS
+        key
+        in set(C.TAG_PREFIX_SETTINGS)
+        | {C.SETTING_AUTO_DATE_TAG, C.SETTING_AUTO_SYNC_TAGS}
     ):
         app.sync_tags_if_enabled()
     if (key is None or key == C.SETTING_NOTES_PATH) and not start:

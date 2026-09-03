@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import logging
-import os
 from dataclasses import asdict
 from json import JSONDecodeError, dump, load
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from app.constants import Constants as C
 from app.paths import data_dir
@@ -41,9 +40,9 @@ class Storage:
     ) -> str:
         try:
             final_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(temp_path, "w", encoding="utf-8") as file:
+            with Path.open(temp_path, "w", encoding="utf-8") as file:
                 dump(data, file, ensure_ascii=False, indent=2)
-            os.replace(temp_path, final_path)
+            Path.replace(temp_path, final_path)
             logger.info(success_msg)
         except OSError as e:
             logger.error(
@@ -52,12 +51,21 @@ class Storage:
             return error_msg
         finally:
             try:
-                if os.path.exists(temp_path):
-                    os.remove(temp_path)
+                if Path.exists(temp_path):
+                    Path.unlink(temp_path)
                     logger.debug("Cleaned up temporary file: %s", temp_path)
             except OSError as e:
                 logger.warning("Failed to delete temporary file %s: %s", temp_path, e)
         return ""
+
+    def _is_expected_type(self, value: object, expected: type[object]) -> bool:
+        return isinstance(value, expected)
+
+    def _is_valid_tags(self, value: object) -> bool:
+        return isinstance(value, list) and all(isinstance(tag, str) for tag in value)
+
+    def _is_valid_note_id(self, value: object) -> bool:
+        return isinstance(value, int) and not isinstance(value, bool)
 
     def _is_valid_note_raw(self, item: object) -> NoteDict | None:
         if not isinstance(item, dict):
@@ -69,47 +77,34 @@ class Storage:
         id: Any | None = item.get("id")
         archived: Any | None = item.get("archived")
         archived_at: Any | None = item.get("archived_at")
-        if (
-            title is None
-            or text is None
-            or tags is None
-            or id is None
-            or archived is None
-            or archived_at is None
-            or created is None
+
+        if not (
+            all(key in item for key in C.REQUIRED_KEYS)
+            and self._is_expected_type(title, str)
+            and self._is_expected_type(text, str)
+            and self._is_valid_tags(tags)
+            and self._is_valid_note_id(id)
+            and self._is_expected_type(archived, bool)
+            and self._is_expected_type(archived_at, str)
+            and self._is_expected_type(created, str)
         ):
             return None
 
-        if not isinstance(title, str):
-            return None
-        if not isinstance(text, str):
-            return None
-        if not isinstance(tags, list):
-            return None
-        if not all(isinstance(t, str) for t in tags):
-            return None
-        if not (id is None or (isinstance(id, int) and not isinstance(id, bool))):
-            return None
-        if not isinstance(archived, bool):
-            return None
-        if not isinstance(archived_at, str):
-            return None
-        if not isinstance(created, str):
-            return None
-
-        return {
-            "title": title,
-            "text": text,
-            "tags": tags,
-            "created": created,
-            "id": id,
-            "archived": archived,
-            "archived_at": archived_at,
+        result: NoteDict = {
+            "title": cast("str", title),
+            "text": cast("str", text),
+            "tags": cast("list[str]", tags),
+            "created": cast("str", created),
+            "id": cast("int | None", id),
+            "archived": cast("bool", archived),
+            "archived_at": cast("str", archived_at),
         }
+
+        return result
 
     def load(self) -> list[NoteDict]:
         try:
-            with open(self.NOTE_PATH, encoding="utf-8") as file:
+            with Path.open(self.NOTE_PATH, encoding="utf-8") as file:
                 raw: Any = load(file)
         except FileNotFoundError:
             logger.warning("Notes file not found, creating new: %s", self.NOTE_PATH)
@@ -139,7 +134,7 @@ class Storage:
 
     def load_settings(self) -> Settings:
         try:
-            with open(self.SETTINGS_PATH, encoding="utf-8") as file:
+            with Path.open(self.SETTINGS_PATH, encoding="utf-8") as file:
                 setting_dict: dict[str, Any] = load(file)
                 settings = Settings()
                 settings.dict_to_settings(setting_dict)

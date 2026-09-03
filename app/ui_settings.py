@@ -17,7 +17,7 @@ def show_settings_categories(app: NotesApp, style_config: StyleConfig) -> str:
     header: str = get_header("Settings", style_config)
     hints: str = make_hint(
         "Actions: {ID} - open category; "
-         f"{C.KEY_PERCENT_QUIT} - quit; {C.KEY_RESET_SETTINGS} - reset all settings",
+        f"{C.KEY_PERCENT_QUIT} - quit; {C.KEY_RESET_SETTINGS} - reset all settings",
         style_config,
     )
     lines: list[str] = []
@@ -68,7 +68,7 @@ def show_settings_group(
     header: str = get_header(group_name, style_config)
     lines: list[str] = []
     for i, setting in enumerate(group_settings):
-        if type(setting.value) == bool:
+        if isinstance(setting.value, bool):
             value: str = "on" if setting.value else "off"
 
         else:

@@ -1,33 +1,26 @@
+from dataclasses import dataclass, field
+
 from app.constants import Constants as C
 from app.paths import data_dir
 
 
+@dataclass
 class Setting:
-    def __init__(
-        self,
-        key: str,
-        label: str,
-        field_type: str,
-        default: int | bool | str,
-        group: str,
-        order: int,
-        options: list[str | int] | None = None,
-        min_value: int | None = None,
-        max_value: int | None = None,
-        max_length: int | None = None,
-        value: int | bool | str | None = None,
-    ) -> None:
-        self.key = key
-        self.label = label
-        self.field_type = field_type
-        self.value = value if value is not None else default
-        self.default = default
-        self.group = group
-        self.order = order
-        self.options = options if options is not None else []
-        self.min_value = min_value
-        self.max_value = max_value
-        self.max_length = max_length
+    key: str
+    label: str
+    field_type: str
+    default: int | bool | str
+    group: str
+    order: int
+    options: list[str | int] = field(default_factory=list)
+    min_value: int | None = None
+    max_value: int | None = None
+    max_length: int | None = None
+    value: int | bool | str | None = None
+
+    def __post_init__(self) -> None:
+        if self.value is None:
+            self.value = self.default
 
     def validate(self, value: bool | str | int) -> bool:
         return (
@@ -46,7 +39,7 @@ class Setting:
             )
             or (
                 self.field_type == C.FIELD_TYPE_CHOICE
-                and (value in self.options)
+                and (value in (self.options or []))
                 and not isinstance(value, bool)
             )
         )

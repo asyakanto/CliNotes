@@ -150,3 +150,13 @@ class Constants:
     }
 
     DATE_FORMAT_STORAGE: Final[str] = "%d-%m-%Y"
+
+    REQUIRED_KEYS: Final[list[str]] = [
+        "title",
+        "text",
+        "tags",
+        "created",
+        "id",
+        "archived",
+        "archived_at",
+    ]

@@ -65,40 +65,35 @@ def apply_filters(notes: list[Note], filters: list[tuple[str, str]]) -> list[Not
     results: list[Note] = notes
     for filter_type, filter_value in filters:
         if filter_value:
-            filtered: list[Note] = []
-            filter_value_lower = filter_value.lower()
-            for note in results:
-                match filter_type:
-                    case "all":
-                        if (
-                            filter_value_lower in note.title.lower()
-                            or filter_value_lower in note.text.lower()
-                        ) and note not in filtered:
-                            filtered.append(note)
-                        for tag in note.tags:
-                            if filter_value_lower in tag.lower():
-                                if note not in filtered:
-                                    filtered.append(note)
-                                break
-                    case "tag":
-                        for tag in note.tags:
-                            if filter_value_lower in tag.lower():
-                                if note not in filtered:
-                                    filtered.append(note)
-                                break
-                    case "title":
-                        if (
-                            filter_value_lower in note.title.lower()
-                            and note not in filtered
-                        ):
-                            filtered.append(note)
-                    case "text":
-                        if (
-                            filter_value_lower in note.text.lower()
-                            and note not in filtered
-                        ):
-                            filtered.append(note)
-                    case _:
-                        continue
-            results = filtered
+            low: str = filter_value.lower()
+            results = [n for n in results if _note_matches(filter_type, low, n)]
+
     return results
+
+
+def _note_matches(filter_type: str, low: str, n: Note) -> bool:
+    match filter_type:
+        case "all":
+            return any(
+                [_matches_text(low, n), _matches_title(low, n), _matches_tag(low, n)]
+            )
+        case "tag":
+            return _matches_tag(low, n)
+        case "title":
+            return _matches_title(low, n)
+        case "text":
+            return _matches_text(low, n)
+        case _:
+            return False
+
+
+def _matches_tag(low: str, n: Note) -> bool:
+    return any(low in tag.lower() for tag in n.tags)
+
+
+def _matches_text(low: str, n: Note) -> bool:
+    return low in n.text.lower()
+
+
+def _matches_title(low: str, n: Note) -> bool:
+    return low in n.title.lower()

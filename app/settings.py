@@ -74,9 +74,10 @@ class Settings:
         return groups
 
     def settings_in_group(self, group: str) -> list[Setting]:
-        settings: list[Setting] = [x for x in self._config.values() if x.group == group]
-        settings = sorted(settings, key=lambda x: x.order)
-        return settings
+        return sorted(
+            [x for x in self._config.values() if x.group == group],
+            key=lambda x: x.order,
+        )
 
     def active_tag_prefixes(self) -> list[str]:
         active_tags: list[str] = []

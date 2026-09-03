@@ -80,15 +80,16 @@ def search_help(prefixes: list[str]) -> str:
         (C.KEY_PERCENT_QUIT, "quit search"),
         ("", ""),
     ]
-    Wid: int = max(len(l) for l, r in pairs)
+    Wid: int = max(len(left) for left, right in pairs)
     lines: list[str] = []
-    for l, r in pairs:
-        if not l and not r:
+    for left, right in pairs:
+        if not left and not right:
             lines.append("")
         else:
-            lines.append(f"{l:<{Wid}}— {r}")
+            lines.append(f"{left:<{Wid}}— {right}")
     lines.append("Combine filters with spaces: AND logic")
     lines.append(
-        f'{prefixes[0] + "work " if len(prefixes) else ""}text:"123 123" title:"meeting notes"'
+        f"{prefixes[0] + 'work ' if len(prefixes) else ''}"
+        'text:"123 123" title:"meeting notes"'
     )
     return make_box(lines, "Search help")

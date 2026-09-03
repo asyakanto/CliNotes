@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from datetime import datetime, timedelta
 
 from app.app import NotesApp
@@ -26,17 +27,17 @@ def show_note(note: Note, app: NotesApp, style_config: StyleConfig) -> str:
     body += make_muted(
         str(note.id) + " #: " + ", ".join(note.tags) + "\n\n", style_config
     )
-    body += (
-        note.text or app.settings.get_str_value(C.SETTING_DEFAULT_TEXT)
-    )
+    body += note.text or app.settings.get_str_value(C.SETTING_DEFAULT_TEXT)
     hints: str = (
         make_hint(
-            f"Choose action: {C.KEY_QUIT} - quit; {C.KEY_ARCHIVE} - archive note; {C.KEY_EDIT} - edit note",
+            f"Choose action: {C.KEY_QUIT} - quit; {C.KEY_ARCHIVE} - archive note;"
+            f" {C.KEY_EDIT} - edit note",
             style_config,
         )
         if not note.archived
         else make_hint(
-            f"Choose action: {C.KEY_QUIT} - quit; {C.KEY_RESTORE} - restore note; {C.KEY_DELETE} - delete note",
+            f"Choose action: {C.KEY_QUIT} - quit; {C.KEY_RESTORE} - restore note;"
+            f" {C.KEY_DELETE} - delete note",
             style_config,
         )
     )
@@ -58,81 +59,105 @@ def _format_deleting_at(note: Note, app: NotesApp) -> str:
         return "unknown date"
 
 
-def note_interface(note: Note, style_config: StyleConfig) -> C.ACTION_TYPE:
-    mode: str
-    mode = read_input()
-    if not note.archived:
-        match mode:
-            case C.KEY_QUIT:
-                return C.ACTION_QUIT
-            case C.KEY_ARCHIVE:
-                return C.ACTION_ARCHIVE
-            case C.KEY_EDIT:
-                editing_mode: str = prompt_input(
-                    hint=f"Edit: {C.KEY_EDIT_TITLE} - title, {C.KEY_EDIT_TEXT} - text",
-                    style_config=style_config,
-                )
-                if editing_mode == C.KEY_EDIT_TITLE:
-                    return C.ACTION_CHANGE_TITLE
-                if editing_mode == C.KEY_EDIT_TEXT:
-                    return C.ACTION_CHANGE_TEXT
-
-    else:
-        match mode:
-            case C.KEY_QUIT:
-                return C.ACTION_QUIT
-            case C.KEY_RESTORE:
-                return C.ACTION_RESTORE
-            case C.KEY_DELETE:
-                return C.ACTION_DELETE
+def _resolve_edit(style_config: StyleConfig) -> C.ACTION_TYPE:
+    editing_mode = prompt_input(
+        hint=f"Edit: {C.KEY_EDIT_TITLE} - title, {C.KEY_EDIT_TEXT} - text",
+        style_config=style_config,
+    )
+    if editing_mode == C.KEY_EDIT_TITLE:
+        return C.ACTION_CHANGE_TITLE
+    if editing_mode == C.KEY_EDIT_TEXT:
+        return C.ACTION_CHANGE_TEXT
     return C.ACTION_UNKNOWN
 
 
+def note_interface(note: Note, style_config: StyleConfig) -> C.ACTION_TYPE:
+    mode: str = read_input()
+    if mode == C.KEY_QUIT:
+        return C.ACTION_QUIT
+    if note.archived:
+        if mode == C.KEY_RESTORE:
+            return C.ACTION_RESTORE
+        if mode == C.KEY_DELETE:
+            return C.ACTION_DELETE
+    else:
+        if mode == C.KEY_ARCHIVE:
+            return C.ACTION_ARCHIVE
+        if mode == C.KEY_EDIT:
+            return _resolve_edit(style_config)
+    return C.ACTION_UNKNOWN
+
+
+def _archive_note(app: NotesApp, note: Note, style_config: StyleConfig) -> bool:
+    if confirm(
+        app=app,
+        setting_key=C.SETTING_CONFIRM_ARCHIVE,
+        message="Archive this note? (y/n)",
+        danger=False,
+        style_config=style_config,
+    ):
+        app.archive_note(note)
+    return False
+
+
+def _change_title(app: NotesApp, note: Note, style_config: StyleConfig) -> bool:
+    new_title: str = prompt_input(
+        hint="New title",
+        prompt_default_text=note.title,
+        lowercase=False,
+        style_config=style_config,
+    )
+    app.edit_note(note, new_title, note.text)
+    return False
+
+
+def _change_text(app: NotesApp, note: Note, style_config: StyleConfig) -> bool:
+    new_text: str = prompt_input(
+        hint="New text",
+        prompt_default_text=note.text,
+        lowercase=False,
+        style_config=style_config,
+    )
+    app.edit_note(note, note.title, new_text)
+    return False
+
+
+def _delete_note(app: NotesApp, note: Note, style_config: StyleConfig) -> bool:
+    if confirm(
+        app=app,
+        setting_key=C.SETTING_CONFIRM_DELETE,
+        message="Delete this note? (y/n)",
+        danger=True,
+        style_config=style_config,
+    ):
+        app.delete_note(note)
+    return True
+
+
+def _restore_note(app: NotesApp, note: Note, style_config: StyleConfig) -> bool:
+    app.restore_note(note)
+    return False
+
+
+def _unknown_action(style_config: StyleConfig) -> bool:
+    pause("Wrong action", style_config)
+    return False
+
+
 def open_note(app: NotesApp, note: Note, style_config: StyleConfig) -> None:
+    handlers: dict[C.ACTION_TYPE, Callable[[], bool]] = {
+        C.ACTION_QUIT: lambda: True,
+        C.ACTION_ARCHIVE: lambda: _archive_note(app, note, style_config),
+        C.ACTION_CHANGE_TITLE: lambda: _change_title(app, note, style_config),
+        C.ACTION_CHANGE_TEXT: lambda: _change_text(app, note, style_config),
+        C.ACTION_RESTORE: lambda: _restore_note(app, note, style_config),
+        C.ACTION_DELETE: lambda: _delete_note(app, note, style_config),
+        C.ACTION_UNKNOWN: lambda: _unknown_action(style_config),
+    }
+
     while True:
         clear_screen(style_config)
         print(show_note(note, app, style_config))
         action: C.ACTION_TYPE = note_interface(note, style_config)
-
-        match action:
-            case C.ACTION_QUIT:
-                break
-            case C.ACTION_ARCHIVE:
-                if confirm(
-                    app=app,
-                    setting_key=C.SETTING_CONFIRM_ARCHIVE,
-                    message="Archive this note? (y/n)",
-                    danger=False,
-                    style_config=style_config,
-                ):
-                    app.archive_note(note)
-            case C.ACTION_CHANGE_TITLE:
-                new_title: str = prompt_input(
-                    hint="New title",
-                    prompt_default_text=note.title,
-                    lowercase=False,
-                    style_config=style_config,
-                )
-                app.edit_note(note, new_title, note.text)
-            case C.ACTION_CHANGE_TEXT:
-                new_text: str = prompt_input(
-                    hint="New text",
-                    prompt_default_text=note.text,
-                    lowercase=False,
-                    style_config=style_config,
-                )
-                app.edit_note(note, note.title, new_text)
-            case C.ACTION_UNKNOWN:
-                pause("Wrong action", style_config)
-            case C.ACTION_RESTORE:
-                app.restore_note(note)
-            case C.ACTION_DELETE:
-                if confirm(
-                    app=app,
-                    setting_key=C.SETTING_CONFIRM_DELETE,
-                    message="Delete this note? (y/n)",
-                    danger=True,
-                    style_config=style_config,
-                ):
-                    app.delete_note(note)
-                    break
+        if handlers[action]():
+            return

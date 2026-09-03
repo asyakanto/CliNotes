@@ -49,7 +49,8 @@ def show_main_menu(app: NotesApp, style_config: StyleConfig) -> str:
         app.notes, app.settings.get_bool_value(C.SETTING_SHOW_ARCHIVED)
     )
     header: str = get_header(
-        f"CliNotes: {get_date(get_local_now(), app.settings.date_pattern())} · {get_plural(len(visible_notes), 'note')}",
+        f"CliNotes: {get_date(get_local_now(), app.settings.date_pattern())} "
+        f"· {get_plural(len(visible_notes), 'note')}",
         style_config,
     )
     body: str = "\n\n".join(
@@ -63,22 +64,16 @@ def show_main_menu(app: NotesApp, style_config: StyleConfig) -> str:
 
     hints: str = make_hint(
         "Actions: {ID}"
-         f" - open note; {C.KEY_QUIT} - quit; {C.KEY_CREATE} - create; {C.KEY_SEARCH} - search; {C.KEY_TOGGLE_ARCHIVED} - show archived; {C.KEY_SETTINGS} - settings",
+        f" - open note; {C.KEY_QUIT} - quit; {C.KEY_CREATE} - create; "
+        f"{C.KEY_SEARCH} - search; {C.KEY_TOGGLE_ARCHIVED} - show archived; "
+        f"{C.KEY_SETTINGS} - settings",
         style_config,
     )
 
     return build_view(header, body, hints)
 
 
-def main_interface() -> str:
-
-    mode = read_input()
-
-    return mode
-
-
 def display_main_menu(app: NotesApp, style_config: StyleConfig) -> str:
     clear_screen(style_config)
     print(show_main_menu(app, style_config))
-    mode: str = main_interface()
-    return mode
+    return read_input()
