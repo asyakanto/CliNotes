@@ -1,7 +1,7 @@
 import logging
 from typing import Any
 
-from app.constants import Constants as C
+from app.constants import Constants
 from app.models import get_date_format
 from app.settings_list import Setting, build_default_settings
 
@@ -66,7 +66,7 @@ class Settings:
                 logger.warning("Invalid value '%s' for setting '%s' ", value, key)
 
     def date_pattern(self) -> str:
-        value: str = self.get_str_value(C.DATE_FORMAT_SETTING)
+        value: str = self.get_str_value(Constants.DATE_FORMAT_SETTING)
         return get_date_format(value)
 
     def groups(self) -> list[str]:
@@ -81,7 +81,7 @@ class Settings:
 
     def active_tag_prefixes(self) -> list[str]:
         active_tags: list[str] = []
-        for key, tag in C.TAG_PREFIX_SETTINGS.items():
+        for key, tag in Constants.TAG_PREFIX_SETTINGS.items():
             if self.get_bool_value(key):
                 active_tags.append(tag)
         return active_tags

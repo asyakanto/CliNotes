@@ -6,7 +6,7 @@ from json import JSONDecodeError, dump, load
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
-from app.constants import Constants as C
+from app.constants import Constants
 from app.paths import data_dir
 from app.settings import Settings
 
@@ -17,6 +17,8 @@ logger = logging.getLogger(__name__)
 
 
 class Storage:
+    """Read and write notes and settings to disk."""
+
     NOTE_PATH: Path
     SETTINGS_PATH: Path
     TEMP_PATH: Path
@@ -25,10 +27,10 @@ class Storage:
     def __init__(self) -> None:
         self.root: Path = data_dir()
         self.root.mkdir(parents=True, exist_ok=True)
-        self.NOTE_PATH = self.root / C.FILE_NOTES
-        self.TEMP_PATH = self.root / C.FILE_TEMP
-        self.SETTINGS_PATH = self.root / C.FILE_SETTINGS
-        self.TEMP_SETTINGS = self.root / C.TEMP_SETTINGS_FILE
+        self.NOTE_PATH = self.root / Constants.FILE_NOTES
+        self.TEMP_PATH = self.root / Constants.FILE_TEMP
+        self.SETTINGS_PATH = self.root / Constants.FILE_SETTINGS
+        self.TEMP_SETTINGS = self.root / Constants.TEMP_SETTINGS_FILE
 
     def _atomic_write(
         self,
@@ -44,10 +46,8 @@ class Storage:
                 dump(data, file, ensure_ascii=False, indent=2)
             Path.replace(temp_path, final_path)
             logger.info(success_msg)
-        except OSError as e:
-            logger.error(
-                "Failed to replace file %s -> %s: %s", temp_path, final_path, e
-            )
+        except OSError:
+            logger.exception("Failed to replace file %s -> %s", temp_path, final_path)
             return error_msg
         finally:
             try:
@@ -74,16 +74,16 @@ class Storage:
         text: Any | None = item.get("text")
         tags: Any | None = item.get("tags")
         created: Any | None = item.get("created")
-        id: Any | None = item.get("id")
+        idd: Any | None = item.get("id")
         archived: Any | None = item.get("archived")
         archived_at: Any | None = item.get("archived_at")
 
         if not (
-            all(key in item for key in C.REQUIRED_KEYS)
+            all(key in item for key in Constants.REQUIRED_KEYS)
             and self._is_expected_type(title, str)
             and self._is_expected_type(text, str)
             and self._is_valid_tags(tags)
-            and self._is_valid_note_id(id)
+            and self._is_valid_note_id(idd)
             and self._is_expected_type(archived, bool)
             and self._is_expected_type(archived_at, str)
             and self._is_expected_type(created, str)
@@ -95,7 +95,7 @@ class Storage:
             "text": cast("str", text),
             "tags": cast("list[str]", tags),
             "created": cast("str", created),
-            "id": cast("int | None", id),
+            "id": cast("int | None", idd),
             "archived": cast("bool", archived),
             "archived_at": cast("str", archived_at),
         }
@@ -110,7 +110,7 @@ class Storage:
             logger.warning("Notes file not found, creating new: %s", self.NOTE_PATH)
             return []
         except JSONDecodeError:
-            logger.error("JSON corrupted, starting fresh")
+            logger.exception("JSON corrupted, starting fresh")
             return []
         if not isinstance(raw, list):
             logger.error("Notes data is not a list")
@@ -127,7 +127,7 @@ class Storage:
     def save(self, notes: list[Note]) -> str:
         notes_serialized: list[dict[str, Any]] = [asdict(note) for note in notes]
         success_msg: str = f"Saved {len(notes)} notes"
-        failed_msg: str = f"Failed to save notes. Details in {C.FILE_LOG}"
+        failed_msg: str = f"Failed to save notes. Details in {Constants.FILE_LOG}"
         return self._atomic_write(
             self.TEMP_PATH, self.NOTE_PATH, notes_serialized, success_msg, failed_msg
         )
@@ -143,7 +143,7 @@ class Storage:
             logger.warning("Settings file not found: %s", self.SETTINGS_PATH)
             return Settings()
         except JSONDecodeError:
-            logger.error("JSON corrupted, starting fresh")
+            logger.exception("JSON corrupted, starting fresh")
             return Settings()
 
     def save_settings(self, settings: Settings) -> str:
@@ -152,17 +152,17 @@ class Storage:
             self.SETTINGS_PATH,
             settings.settings_to_dict(),
             "Settings changed and saved successfully",
-            f"Failed to save settings. Details in the {C.FILE_LOG}",
+            f"Failed to save settings. Details in the {Constants.FILE_LOG}",
         )
 
     def update_notes_path(self, settings: Settings) -> bool:
-        str_path: str = settings.get_str_value(C.SETTING_NOTES_PATH)
+        str_path: str = settings.get_str_value(Constants.SETTING_NOTES_PATH)
         path: Path = self.root / str_path
         if path.is_dir():
-            self.NOTE_PATH = path / C.FILE_NOTES
-            self.TEMP_PATH = path / C.FILE_TEMP
+            self.NOTE_PATH = path / Constants.FILE_NOTES
+            self.TEMP_PATH = path / Constants.FILE_TEMP
             return True
 
-        self.NOTE_PATH = self.root / C.FILE_NOTES
-        self.TEMP_PATH = self.root / C.FILE_TEMP
+        self.NOTE_PATH = self.root / Constants.FILE_NOTES
+        self.TEMP_PATH = self.root / Constants.FILE_TEMP
         return False

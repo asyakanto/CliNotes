@@ -1,6 +1,8 @@
-from app.app import NotesApp
-from app.constants import Constants as C
-from app.settings_list import Setting
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from app.constants import Constants
 from app.ui_input import pause, prompt_input, read_input
 from app.ui_style import (
     StyleConfig,
@@ -12,12 +14,17 @@ from app.ui_style import (
     make_hint,
 )
 
+if TYPE_CHECKING:
+    from app.app import NotesApp
+    from app.settings_list import Setting
+
 
 def show_settings_categories(app: NotesApp, style_config: StyleConfig) -> str:
     header: str = get_header("Settings", style_config)
     hints: str = make_hint(
         "Actions: {ID} - open category; "
-        f"{C.KEY_PERCENT_QUIT} - quit; {C.KEY_RESET_SETTINGS} - reset all settings",
+        f"{Constants.KEY_PERCENT_QUIT} - quit; "
+        f"{Constants.KEY_RESET_SETTINGS} - reset all settings",
         style_config,
     )
     lines: list[str] = []
@@ -32,11 +39,11 @@ def settings_interface(app: NotesApp, style_config: StyleConfig) -> None:
     groups = app.settings.groups()
     while True:
         clear_screen(style_config)
-        print(show_settings_categories(app, style_config))
+        print(show_settings_categories(app, style_config))  # noqa: T201
         action: str = read_input()
-        if action == C.KEY_PERCENT_QUIT:
+        if action == Constants.KEY_PERCENT_QUIT:
             return
-        if action == C.KEY_RESET_SETTINGS:
+        if action == Constants.KEY_RESET_SETTINGS:
             if (
                 prompt_input(
                     "Reset all settings? (y/n)",
@@ -60,7 +67,6 @@ def settings_interface(app: NotesApp, style_config: StyleConfig) -> None:
 
 
 def show_settings_group(
-    app: NotesApp,
     group_name: str,
     group_settings: list[Setting],
     style_config: StyleConfig,
@@ -78,7 +84,7 @@ def show_settings_group(
         )
     body: str = "\n".join(lines)
     hints: str = make_hint(
-        "Actions: {ID} - change setting; " + f"{C.KEY_PERCENT_QUIT} - quit",
+        "Actions: {ID} - change setting; " + f"{Constants.KEY_PERCENT_QUIT} - quit",
         style_config,
     )
 
@@ -91,9 +97,9 @@ def settings_group_interface(
     group_settings: list[Setting] = app.settings.settings_in_group(group)
     while True:
         clear_screen(style_config)
-        print(show_settings_group(app, group, group_settings, style_config))
+        print(show_settings_group(group, group_settings, style_config))  # noqa: T201
         action: str = read_input()
-        if action == C.KEY_PERCENT_QUIT:
+        if action == Constants.KEY_PERCENT_QUIT:
             app.save_settings()
             return
         if action.isdigit():
@@ -108,13 +114,13 @@ def settings_group_interface(
 
 def edit_setting(app: NotesApp, setting: Setting, style_config: StyleConfig) -> None:
     match setting.field_type:
-        case C.FIELD_TYPE_BOOL:
+        case Constants.FIELD_TYPE_BOOL:
             _edit_bool_setting(app, setting, style_config)
-        case C.FIELD_TYPE_INT:
+        case Constants.FIELD_TYPE_INT:
             _edit_int_setting(app, setting, style_config)
-        case C.FIELD_TYPE_STR:
+        case Constants.FIELD_TYPE_STR:
             _edit_str_setting(app, setting, style_config)
-        case C.FIELD_TYPE_CHOICE:
+        case Constants.FIELD_TYPE_CHOICE:
             _edit_choice_setting(app, setting, style_config)
 
 
@@ -134,7 +140,7 @@ def _edit_str_setting(
     else:
         clue = "Enter a text"
     value = prompt_input(hint=clue, lowercase=False, style_config=style_config)
-    if value == C.KEY_PERCENT_QUIT:
+    if value == Constants.KEY_PERCENT_QUIT:
         return
     edited_str: bool = app.settings.set_value(setting.key, value)
     if edited_str:
@@ -155,7 +161,7 @@ def _edit_int_setting(
     else:
         clue += "Range: " + _range_clue(min_value, max_value)
     value = prompt_input(hint=clue, lowercase=False, style_config=style_config)
-    if value == C.KEY_PERCENT_QUIT:
+    if value == Constants.KEY_PERCENT_QUIT:
         return
     if value.isdigit():
         edited: bool = app.settings.set_value(setting.key, int(value))
@@ -177,7 +183,7 @@ def _edit_choice_setting(
     choices: list[str | int] = setting.options
     _render_choice_page(setting, choices, style_config)
     value: str = read_input(lowercase=False)
-    if value == C.KEY_PERCENT_QUIT:
+    if value == Constants.KEY_PERCENT_QUIT:
         return
     if value.isdigit() and 0 <= int(value) < len(choices):
         app.settings.set_value(setting.key, choices[int(value)])
@@ -186,13 +192,13 @@ def _edit_choice_setting(
         pause("Wrong ID", style_config)
 
 
-def _range_clue(min: int | None = None, max: int | None = None) -> str:
+def _range_clue(mn: int | None = None, mx: int | None = None) -> str:
     clue = ""
-    if min is not None:
-        clue += str(min)
+    if mn is not None:
+        clue += str(mn)
     clue += ".."
-    if max is not None:
-        clue += str(max)
+    if mx is not None:
+        clue += str(mx)
 
     return clue
 
@@ -207,4 +213,4 @@ def _render_choice_page(
     body: str = "\n".join(lines)
     header: str = get_header(setting.label, style_config)
     hints: str = make_hint("choose option ID", style_config)
-    print(build_view(header, body, hints))
+    print(build_view(header, body, hints))  # noqa: T201

@@ -1,9 +1,15 @@
-import shutil
-from dataclasses import dataclass
-from os import name, system
+from __future__ import annotations
 
-from app.app import NotesApp
-from app.constants import Constants as C
+import shutil
+import subprocess
+from dataclasses import dataclass
+from os import name
+from typing import TYPE_CHECKING
+
+from app.constants import Constants
+
+if TYPE_CHECKING:
+    from app.app import NotesApp
 
 
 @dataclass
@@ -15,25 +21,25 @@ class StyleConfig:
 
 def make_cyan(text: str, config: StyleConfig) -> str:
     if config.colors:
-        return C.ANSI_CYAN + text + C.ANSI_RESET
+        return Constants.ANSI_CYAN + text + Constants.ANSI_RESET
     return text
 
 
 def make_muted(text: str, config: StyleConfig) -> str:
     if config.colors:
-        return C.ANSI_DIM + text + C.ANSI_RESET
+        return Constants.ANSI_DIM + text + Constants.ANSI_RESET
     return text
 
 
 def make_red(text: str, config: StyleConfig) -> str:
     if config.colors:
-        return C.ANSI_RED + text + C.ANSI_RESET
+        return Constants.ANSI_RED + text + Constants.ANSI_RESET
     return text
 
 
 def make_pink(text: str, config: StyleConfig) -> str:
     if config.colors:
-        return C.ANSI_PINK + text + C.ANSI_RESET
+        return Constants.ANSI_PINK + text + Constants.ANSI_RESET
     return text
 
 
@@ -56,7 +62,7 @@ def make_box(lines: list[str], title: str) -> str:
 def get_header(text: str, config: StyleConfig, pink: bool = False) -> str:
     width: int = shutil.get_terminal_size().columns
     if width <= 0:
-        width = C.DEFAULT_TERMINAL_WIDTH
+        width = Constants.DEFAULT_TERMINAL_WIDTH
     padding: int = max(0, width - len(text) - 2)
 
     return (
@@ -79,28 +85,30 @@ def clear_screen(config: StyleConfig) -> None:
     if not config.clear_screen:
         return
     if name == "nt":
-        system("cls")
+        subprocess.run(["cls"], check=False)  # noqa: S607
     else:
-        system("clear")
+        subprocess.run(["clear"], check=False)  # noqa: S607
 
 
 def apply_settings(
     app: NotesApp, config: StyleConfig, key: str | None = None, start: bool = False
 ) -> None:
-    if key is None or key == C.SETTING_USE_COLORS:
-        config.colors = app.settings.get_bool_value(C.SETTING_USE_COLORS)
+    if key is None or key == Constants.SETTING_USE_COLORS:
+        config.colors = app.settings.get_bool_value(Constants.SETTING_USE_COLORS)
 
-    if key is None or key == C.SETTING_USE_CLEAR_SCREEN:
-        config.clear_screen = app.settings.get_bool_value(C.SETTING_USE_CLEAR_SCREEN)
-    if key is None or key == C.SETTING_USE_HINTS:
-        config.hints = app.settings.get_bool_value(C.SETTING_USE_HINTS)
+    if key is None or key == Constants.SETTING_USE_CLEAR_SCREEN:
+        config.clear_screen = app.settings.get_bool_value(
+            Constants.SETTING_USE_CLEAR_SCREEN
+        )
+    if key is None or key == Constants.SETTING_USE_HINTS:
+        config.hints = app.settings.get_bool_value(Constants.SETTING_USE_HINTS)
     if key is None or (
         key
-        in set(C.TAG_PREFIX_SETTINGS)
-        | {C.SETTING_AUTO_DATE_TAG, C.SETTING_AUTO_SYNC_TAGS}
+        in set(Constants.TAG_PREFIX_SETTINGS)
+        | {Constants.SETTING_AUTO_DATE_TAG, Constants.SETTING_AUTO_SYNC_TAGS}
     ):
         app.sync_tags_if_enabled()
-    if (key is None or key == C.SETTING_NOTES_PATH) and not start:
+    if (key is None or key == Constants.SETTING_NOTES_PATH) and not start:
         app.apply_notes_path()
-    if key is None or key == C.SETTING_LOG_LEVEL:
+    if key is None or key == Constants.SETTING_LOG_LEVEL:
         app.apply_log_level()

@@ -1,7 +1,23 @@
-from app.models import Note
+"""Search and filtering logic for notes."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.models import Note
 
 
 def merge_prefixes(tokens: list[str]) -> list[str]:
+    """Merge tokens that follow a 'title:'/'text:' prefix into one token.
+
+    Args:
+        tokens (list[str]): The raw list of string tokens.
+
+    Returns:
+        list[str]: Tokens with prefixed fragments merged tohether.
+
+    """
     current_token: str = ""
     merged_tokens: list[str] = []
     for token in tokens:
@@ -18,6 +34,15 @@ def merge_prefixes(tokens: list[str]) -> list[str]:
 
 
 def split_with_quotes(query: str) -> list[str]:
+    """Split a query into tokens, keeping quoted phrases together.
+
+    Args:
+        query (str): the raw search query string.
+
+    Returns:
+        list[str]: lowercased tokens. respecting quoted groups.
+
+    """
     tokens: list[str] = []
     current_token: str = ""
     in_quotes: bool = False
@@ -37,6 +62,17 @@ def split_with_quotes(query: str) -> list[str]:
 
 
 def parse_query(query: str, prefixes: list[str]) -> list[tuple[str, str]]:
+    """Parse a search query into a list of (filter_type, value) pairs.
+
+    Args:
+        query (str): The raw search query string.
+        prefixes (list[str]): Tag prefixes (e.g. "#") used to detect tags.
+
+    Returns:
+        list[tuple[str, str]]: Pairs like ("tag", value), ("title", ...),
+            ("text", ...) or ("all", ...).
+
+    """
     raw_parts: list[str] = split_with_quotes(query)
     raw_parts = merge_prefixes(raw_parts)
     filters: list[tuple[str, str]] = []
@@ -62,6 +98,16 @@ def parse_query(query: str, prefixes: list[str]) -> list[tuple[str, str]]:
 
 
 def apply_filters(notes: list[Note], filters: list[tuple[str, str]]) -> list[Note]:
+    """Filter notes by successively applying each search filter.
+
+    Args:
+        notes (list[Note]): The list of notes to filter.
+        filters (list[tuple[str, str]]): (filter_type, value) pairs.
+
+    Returns:
+        list[Note]: The notes that match all filters.
+
+    """
     results: list[Note] = notes
     for filter_type, filter_value in filters:
         if filter_value:

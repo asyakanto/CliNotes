@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 import logging
 import sys
-from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from app.app import NotesApp
-from app.constants import Constants as C
-from app.models import Note
+from app.constants import Constants
 from app.paths import data_dir
 from app.ui_input import pause
 from app.ui_menu import display_main_menu
@@ -13,14 +14,20 @@ from app.ui_scenarios import create_note_scenario, search_scenario
 from app.ui_settings import settings_interface
 from app.ui_style import StyleConfig, apply_settings, clear_screen
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from app.models import Note
+
+
 logger = logging.getLogger(__name__)
 
 
 def run_app(app: NotesApp, style_config: StyleConfig) -> None:
     action_table: dict[str, Callable[[NotesApp, StyleConfig], None]] = {
-        C.KEY_CREATE: create_note_scenario,
-        C.KEY_SEARCH: search_scenario,
-        C.KEY_SETTINGS: settings_interface,
+        Constants.KEY_CREATE: create_note_scenario,
+        Constants.KEY_SEARCH: search_scenario,
+        Constants.KEY_SETTINGS: settings_interface,
     }
     while True:
         mode: str = display_main_menu(app, style_config)
@@ -30,12 +37,12 @@ def run_app(app: NotesApp, style_config: StyleConfig) -> None:
             if created_note:
                 open_note(app, created_note, style_config)
 
-        elif mode == C.KEY_QUIT:
+        elif mode == Constants.KEY_QUIT:
             logger.info("Application closed")
             clear_screen(style_config)
             app.save_notes()
             return
-        elif mode == C.KEY_TOGGLE_ARCHIVED:
+        elif mode == Constants.KEY_TOGGLE_ARCHIVED:
             app.toggle_show_archived()
         elif mode in action_table:
             action_table[mode](app, style_config)
@@ -48,7 +55,7 @@ def main() -> None:
             level=logging.INFO,
             format="%(asctime)s [%(levelname)s] %(message)s",
             handlers=[
-                logging.FileHandler(data_dir() / C.FILE_LOG),
+                logging.FileHandler(data_dir() / Constants.FILE_LOG),
             ],
         )
     except OSError:
@@ -69,7 +76,7 @@ def main() -> None:
         return
     except Exception:
         logger.exception("Fatal error")
-        pause(f"An error occurred. Details in the {C.FILE_LOG}", style_config)
+        pause(f"An error occurred. Details in the {Constants.FILE_LOG}", style_config)
         return
 
     try:
@@ -80,5 +87,5 @@ def main() -> None:
         return
     except Exception:
         logger.exception("Fatal error")
-        pause(f"An error occurred. Details in the {C.FILE_LOG}", style_config)
+        pause(f"An error occurred. Details in the {Constants.FILE_LOG}", style_config)
         return

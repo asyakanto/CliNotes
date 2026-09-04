@@ -1,11 +1,16 @@
+from __future__ import annotations
+
 import logging
 from datetime import datetime
+from typing import TYPE_CHECKING
 
-from app.constants import Constants as C
+from app.constants import Constants
 from app.models import Note, get_date, get_local_now, get_plural, get_tags
 from app.search import apply_filters, parse_query
-from app.settings import Settings
 from app.storage import Storage
+
+if TYPE_CHECKING:
+    from app.settings import Settings
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +38,7 @@ class NotesApp:
         self.sync_tags_if_enabled()
 
     def _calculate_max_id(self) -> int:
-        max_id: int = C.NO_NOTES_MAX_ID
+        max_id: int = Constants.NO_NOTES_MAX_ID
         for note in self.notes:
             if (
                 note.id is not None
@@ -68,15 +73,17 @@ class NotesApp:
         to_delete: list[Note] = []
         notes_before_deleting: int = len(self.notes)
         for note in self.notes:
-            if note.archived_at != C.DEFAULT_ARCHIVED_AT and note.archived:
+            if note.archived_at != Constants.DEFAULT_ARCHIVED_AT and note.archived:
                 try:
                     if (
                         current_date
                         - datetime.strptime(
                             note.archived_at,
-                            C.DATE_FORMAT_STORAGE,
+                            Constants.DATE_FORMAT_STORAGE,
                         ).replace(tzinfo=get_local_now().tzinfo)
-                    ).days > self.settings.get_int_value(C.SETTING_AUTO_DELETE_DAYS):
+                    ).days > self.settings.get_int_value(
+                        Constants.SETTING_AUTO_DELETE_DAYS
+                    ):
                         to_delete.append(note)
                 except ValueError:
                     continue
@@ -92,7 +99,7 @@ class NotesApp:
 
     def create_note(self, title: str, text: str) -> Note:
         self.max_id += 1
-        created: str = get_date(get_local_now(), C.DATE_FORMAT_STORAGE)
+        created: str = get_date(get_local_now(), Constants.DATE_FORMAT_STORAGE)
         note: Note = Note(
             id=self.max_id,
             title=title,
@@ -105,9 +112,9 @@ class NotesApp:
         self._save_if_auto()
         return note
 
-    def get_note(self, id: int) -> Note | None:
+    def get_note(self, idd: int) -> Note | None:
         for note in self.notes:
-            if id == note.id:
+            if idd == note.id:
                 return note
         return None
 
@@ -122,14 +129,14 @@ class NotesApp:
 
     def archive_note(self, note: Note) -> Note:
         note.archived = True
-        note.archived_at = get_date(get_local_now(), C.DATE_FORMAT_STORAGE)
+        note.archived_at = get_date(get_local_now(), Constants.DATE_FORMAT_STORAGE)
         logger.info("Note archived: #%s: %s", note.id, note.title)
         self._save_if_auto()
         return note
 
     def restore_note(self, note: Note) -> Note:
         note.archived = False
-        note.archived_at = C.DEFAULT_ARCHIVED_AT
+        note.archived_at = Constants.DEFAULT_ARCHIVED_AT
         self._save_if_auto()
         return note
 
@@ -166,12 +173,12 @@ class NotesApp:
         return self.notes
 
     def sync_tags_if_enabled(self) -> None:
-        if self.settings.get_bool_value(C.SETTING_AUTO_SYNC_TAGS):
+        if self.settings.get_bool_value(Constants.SETTING_AUTO_SYNC_TAGS):
             self._sync_tags_with_settings()
 
     def _build_tags(self, text: str, created: str) -> list[str]:
         tags: list[str] = get_tags(text, self.settings.active_tag_prefixes())
-        if self.settings.get_bool_value(C.SETTING_AUTO_DATE_TAG):
+        if self.settings.get_bool_value(Constants.SETTING_AUTO_DATE_TAG):
             tags.insert(0, created)
         return tags
 
@@ -188,16 +195,16 @@ class NotesApp:
     def apply_notes_path(self) -> None:
         result: bool = self.storage.update_notes_path(self.settings)
         if not result:
-            self.settings.reset_setting(C.SETTING_NOTES_PATH)
+            self.settings.reset_setting(Constants.SETTING_NOTES_PATH)
             self.save_settings()
             self.add_notification("Invalid path, using default")
 
         self._load_notes()
 
     def apply_log_level(self) -> None:
-        level: str = self.settings.get_str_value(C.SETTING_LOG_LEVEL)
+        level: str = self.settings.get_str_value(Constants.SETTING_LOG_LEVEL)
         logger: logging.Logger = logging.getLogger()
-        logger_level: int | None = C.LOG_LEVEL_MAP.get(level)
+        logger_level: int | None = Constants.LOG_LEVEL_MAP.get(level)
         if logger_level is not None:
             logger.setLevel(logger_level)
         else:
@@ -205,8 +212,8 @@ class NotesApp:
 
     def toggle_show_archived(self) -> None:
         self.settings.set_value(
-            C.SETTING_SHOW_ARCHIVED,
-            not self.settings.get_bool_value(C.SETTING_SHOW_ARCHIVED),
+            Constants.SETTING_SHOW_ARCHIVED,
+            not self.settings.get_bool_value(Constants.SETTING_SHOW_ARCHIVED),
         )
         self.save_settings()
 
@@ -217,7 +224,7 @@ class NotesApp:
             self.add_notification(result)
 
     def _save_if_auto(self) -> None:
-        if self.settings.get_bool_value(C.SETTING_AUTO_SAVE):
+        if self.settings.get_bool_value(Constants.SETTING_AUTO_SAVE):
             self.save_notes()
 
     # ── Notifications ────────────────────────

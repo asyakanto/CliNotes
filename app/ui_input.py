@@ -1,22 +1,29 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from prompt_toolkit import prompt
 
-from app.app import NotesApp
-from app.constants import Constants as C
-from app.ui_style import StyleConfig, make_cyan, make_red
+from app.constants import Constants
+from app.ui_style import make_cyan, make_red
+
+if TYPE_CHECKING:
+    from app.app import NotesApp
+    from app.ui_style import StyleConfig
 
 
 def read_input(lowercase: bool = True, prompt_default_text: str | None = None) -> str:
     response: str
     if prompt_default_text is None:
-        response = input(C.UI_PROMPT).strip()
+        response = input(Constants.UI_PROMPT).strip()
     else:
         response = prompt(default=prompt_default_text).strip()
-    print()
+    print()  # noqa: T201
     return response.lower() if lowercase else response
 
 
 def pause(message: str, style_config: StyleConfig) -> None:
-    print()
+    print()  # noqa: T201
     input(make_red(message, style_config))
 
 
@@ -28,7 +35,7 @@ def prompt_input(
     danger: bool = False,
 ) -> str:
 
-    print(
+    print(  # noqa: T201
         f"{make_red(hint, style_config) if danger else make_cyan(hint, style_config)}\n"
     )
     return read_input(lowercase=lowercase, prompt_default_text=prompt_default_text)

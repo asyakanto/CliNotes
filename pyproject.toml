@@ -14,15 +14,57 @@ dev = [
     "ruff>=0.16.5"
 ]
 
-[tool.ruff.lint]
-# extend-select = ["YTT", "ASYNC", "S", "BLE", "B", "DTZ", "T10", "EXE", "FA", "INT", "ISC", "LOG", "G", "PIE", "PYI", "PT", "TC", "FLY", "N", "PERF", "D", "PGH", "FURB", "RUF", "TRY"]
-ignore = ["EXE002"]
-extend-select = ["I", "E", "W", "F", "UP", "SIM", "C", "RET", "PL", "PLR", "PTH"]
+[tool.ruff]
+line-length = 88
+target-version = "py314"
+src = ["app"]
 
+[tool.ruff.lint]
+extend-select = [
+    # БАЗА
+    "E", "W", "F", "I", "N",
+    # СОВРЕМЕННЫЙ PYTHON
+    "UP", "FLY", "PTH", "FA",
+    # КАЧЕСТВО
+    "B", "SIM", "C4", "RET", "PL", "PLR", "PIE", "FURB", "C",
+    # БЕЗОПАСНОСТЬ И ОТЛАДКА
+    "S", "T10", "T", "BLE", "DTZ",
+    # СПЕЦИАЛИЗИРОВАННЫЕ
+    "ASYNC", "PT", "G", "LOG", "ISC", "TC", "YTT", "EXE", "INT", "PYI", "PGH",
+    # ДОПОЛНИТЕЛЬНЫЕ
+    "ANN", "A", "ARG", "Q", "TID", "ERA", "COM", "RUF",
+    # ПРОИЗВОДИТЕЛЬНОСТЬ
+    "PERF",
+]
+# "D", "TRY", "FBT", "EM"
+
+# ignore
+ignore = ["EXE002", "D203", "D213", "COM812"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+docstring-code-format = true
 
 [tool.mypy]
 strict = true
 explicit_package_bases = true
+
+python_version = "3.14"              # Целевая версия Python (обязательно)
+mypy_path = ["src"]                  # Корневые директории для поиска пакетов
+namespace_packages = true            # Поддержка namespace packages
+cache_dir = ".mypy_cache"            # Директория для кеша
+
+exclude = [
+    "tests/",
+    "venv/",
+    ".venv/",
+    "build/",
+    "dist/",
+    "__pycache__/",
+    "migrations/",                   # Django миграции
+    "conftest.py",                  # Pytest конфиг
+]
 
 [build-system]
 requires = ["hatchling"]
