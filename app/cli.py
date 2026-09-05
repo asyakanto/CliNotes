@@ -1,3 +1,5 @@
+"""Command-line entry point of the CliNotes application."""
+
 from __future__ import annotations
 
 import logging
@@ -24,6 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 def run_app(app: NotesApp, style_config: StyleConfig) -> None:
+    """Run the main menu loop dispatching user actions."""
     action_table: dict[str, Callable[[NotesApp, StyleConfig], None]] = {
         Constants.KEY_CREATE: create_note_scenario,
         Constants.KEY_SEARCH: search_scenario,
@@ -49,6 +52,7 @@ def run_app(app: NotesApp, style_config: StyleConfig) -> None:
 
 
 def main() -> None:
+    """Set up logging and run the application entry point."""
     try:
         data_dir().mkdir(parents=True, exist_ok=True)
         logging.basicConfig(

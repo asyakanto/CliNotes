@@ -1,3 +1,5 @@
+"""Business logic of the CliNotes application."""
+
 from __future__ import annotations
 
 import logging
@@ -16,6 +18,8 @@ logger = logging.getLogger(__name__)
 
 
 class NotesApp:
+    """Central application logic: notes, tags, settings and saving."""
+
     notes: list[Note]
     max_id: int
     settings: Settings
@@ -23,6 +27,7 @@ class NotesApp:
 
     # ── Life cycle ───────────────────────────
     def __init__(self) -> None:
+        """Initialize storage, load settings and notes."""
         self._notifications: list[str] = []
         self.storage = Storage()
         self.settings = self.storage.load_settings()
@@ -98,6 +103,7 @@ class NotesApp:
     # ── CRUD ─────────────────────────────────
 
     def create_note(self, title: str, text: str) -> Note:
+        """Create a note, auto-assign ID and build tags."""
         self.max_id += 1
         created: str = get_date(get_local_now(), Constants.DATE_FORMAT_STORAGE)
         note: Note = Note(
@@ -113,12 +119,14 @@ class NotesApp:
         return note
 
     def get_note(self, idd: int) -> Note | None:
+        """Return the note with the given ID, or None."""
         for note in self.notes:
             if idd == note.id:
                 return note
         return None
 
     def edit_note(self, note: Note, new_title: str, new_text: str) -> Note:
+        """Update title/text and rebuild tags of a note."""
         if new_title and new_title != note.title:
             note.title = new_title
         if new_text != note.text:
@@ -128,6 +136,7 @@ class NotesApp:
         return note
 
     def archive_note(self, note: Note) -> Note:
+        """Mark a note as archived."""
         note.archived = True
         note.archived_at = get_date(get_local_now(), Constants.DATE_FORMAT_STORAGE)
         logger.info("Note archived: #%s: %s", note.id, note.title)
@@ -135,12 +144,14 @@ class NotesApp:
         return note
 
     def restore_note(self, note: Note) -> Note:
+        """Restore an archived note."""
         note.archived = False
         note.archived_at = Constants.DEFAULT_ARCHIVED_AT
         self._save_if_auto()
         return note
 
     def delete_note(self, note: Note) -> None:
+        """Remove a note from the list."""
         note_id: int | None = note.id
         for i, note_item in enumerate(self.notes):
             if note_item.id == note_id:
@@ -151,6 +162,7 @@ class NotesApp:
     # ── Search ───────────────────────────────
 
     def search_note(self, query: str) -> list[Note]:
+        """Return notes matching the parsed query filters."""
         filters: list[tuple[str, str]] = parse_query(
             query, self.settings.active_tag_prefixes()
         )
@@ -173,6 +185,7 @@ class NotesApp:
         return self.notes
 
     def sync_tags_if_enabled(self) -> None:
+        """Sync tags from text if the setting is enabled."""
         if self.settings.get_bool_value(Constants.SETTING_AUTO_SYNC_TAGS):
             self._sync_tags_with_settings()
 
@@ -184,15 +197,18 @@ class NotesApp:
 
     # ── Settings ─────────────────────────────
     def save_settings(self) -> None:
+        """Persist settings to disk."""
         result: str = self.storage.save_settings(self.settings)
         if result:
             self.add_notification(result)
 
     def reset_settings(self) -> None:
+        """Reset all settings to defaults and save."""
         self.settings.reset_all()
         self.save_settings()
 
     def apply_notes_path(self) -> None:
+        """Apply the configured notes path and load notes."""
         result: bool = self.storage.update_notes_path(self.settings)
         if not result:
             self.settings.reset_setting(Constants.SETTING_NOTES_PATH)
@@ -202,6 +218,7 @@ class NotesApp:
         self._load_notes()
 
     def apply_log_level(self) -> None:
+        """Apply the configured logging level."""
         level: str = self.settings.get_str_value(Constants.SETTING_LOG_LEVEL)
         logger: logging.Logger = logging.getLogger()
         logger_level: int | None = Constants.LOG_LEVEL_MAP.get(level)
@@ -211,6 +228,7 @@ class NotesApp:
             logger.warning("Unknown logging level: %s", level)
 
     def toggle_show_archived(self) -> None:
+        """Flip the show-archived setting."""
         self.settings.set_value(
             Constants.SETTING_SHOW_ARCHIVED,
             not self.settings.get_bool_value(Constants.SETTING_SHOW_ARCHIVED),
@@ -219,6 +237,7 @@ class NotesApp:
 
     # ── Saving ───────────────────────────────
     def save_notes(self) -> None:
+        """Persist notes to disk."""
         result: str = self.storage.save(self.notes)
         if result:
             self.add_notification(result)
@@ -230,10 +249,12 @@ class NotesApp:
     # ── Notifications ────────────────────────
 
     def add_notification(self, message: str) -> None:
+        """Queue a notification message."""
         if message.strip():
             self._notifications.append(message.strip())
 
     def pop_notifications(self) -> list[str]:
+        """Return all queued notifications and clear them."""
         notifications: list[str] = self._notifications
         self._notifications = []
         return notifications

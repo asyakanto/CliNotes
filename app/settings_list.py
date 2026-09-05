@@ -1,3 +1,5 @@
+"""Settings definition: the Setting dataclass and default settings."""
+
 from dataclasses import dataclass, field
 
 from app.constants import Constants
@@ -6,6 +8,8 @@ from app.paths import data_dir
 
 @dataclass
 class Setting:
+    """A single configurable setting with type, bounds and value."""
+
     key: str
     label: str
     field_type: str
@@ -19,10 +23,12 @@ class Setting:
     value: int | bool | str | None = None
 
     def __post_init__(self) -> None:
+        """Use the default value when no value was provided."""
         if self.value is None:
             self.value = self.default
 
-    def validate(self, value: bool | str | int) -> bool:
+    def validate(self, value: bool | str | int) -> bool:  # noqa: FBT001
+        """Return whether the value matches this setting's type and bounds."""
         return (
             (self.field_type == Constants.FIELD_TYPE_BOOL and isinstance(value, bool))
             or (
@@ -46,6 +52,7 @@ class Setting:
 
 
 def build_default_settings() -> list[Setting]:
+    """Build the default list of application settings."""
     return [
         Setting(
             key=Constants.SETTING_SHOW_ARCHIVED,

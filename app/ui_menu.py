@@ -1,3 +1,5 @@
+"""Rendering of the main menu and note lists."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -20,13 +22,15 @@ if TYPE_CHECKING:
     from app.models import Note
 
 
-def get_visible_notes(notes: list[Note], display_archive: bool) -> list[Note]:
+def get_visible_notes(notes: list[Note], *, display_archive: bool) -> list[Note]:
+    """Return notes, respecting the display-archive flag."""
     if display_archive:
         return notes
     return [note for note in notes if not note.archived]
 
 
 def display_notes(notes: list[Note], style_config: StyleConfig) -> str:
+    """Format notes as lines, muting archived ones."""
     if len(notes) != 0:
         lines: list[str] = []
         for note in notes:
@@ -40,7 +44,8 @@ def display_notes(notes: list[Note], style_config: StyleConfig) -> str:
     )
 
 
-def get_notifications(app: NotesApp, style_config: StyleConfig) -> str:
+def _get_visible_notes(app: NotesApp, style_config: StyleConfig) -> str:
+    """Format queued notifications as red lines."""
     lines: list[str] = [
         make_red("[!] " + notification, style_config)
         for notification in app.pop_notifications()
@@ -48,9 +53,11 @@ def get_notifications(app: NotesApp, style_config: StyleConfig) -> str:
     return "\n".join(lines)
 
 
-def show_main_menu(app: NotesApp, style_config: StyleConfig) -> str:
+def _show_main_menu(app: NotesApp, style_config: StyleConfig) -> str:
+    """Compose the full main menu view: header, notes and hints."""
     visible_notes: list[Note] = get_visible_notes(
-        app.notes, app.settings.get_bool_value(Constants.SETTING_SHOW_ARCHIVED)
+        app.notes,
+        display_archive=app.settings.get_bool_value(Constants.SETTING_SHOW_ARCHIVED),
     )
     header: str = get_header(
         f"CliNotes: {get_date(get_local_now(), app.settings.date_pattern())} "
@@ -60,7 +67,7 @@ def show_main_menu(app: NotesApp, style_config: StyleConfig) -> str:
     body: str = "\n\n".join(
         section
         for section in [
-            get_notifications(app, style_config),
+            _get_visible_notes(app, style_config),
             display_notes(visible_notes, style_config),
         ]
         if section
@@ -79,6 +86,7 @@ def show_main_menu(app: NotesApp, style_config: StyleConfig) -> str:
 
 
 def display_main_menu(app: NotesApp, style_config: StyleConfig) -> str:
+    """Clear the screen, print the main menu and read an action."""
     clear_screen(style_config)
-    print(show_main_menu(app, style_config))  # noqa: T201
+    print(_show_main_menu(app, style_config))  # noqa: T201
     return read_input()

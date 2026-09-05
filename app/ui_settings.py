@@ -1,3 +1,5 @@
+"""Settings interface: browse groups, edit and reset settings."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -19,7 +21,7 @@ if TYPE_CHECKING:
     from app.settings_list import Setting
 
 
-def show_settings_categories(app: NotesApp, style_config: StyleConfig) -> str:
+def _show_settings_categories(app: NotesApp, style_config: StyleConfig) -> str:
     header: str = get_header("Settings", style_config)
     hints: str = make_hint(
         "Actions: {ID} - open category; "
@@ -36,10 +38,11 @@ def show_settings_categories(app: NotesApp, style_config: StyleConfig) -> str:
 
 
 def settings_interface(app: NotesApp, style_config: StyleConfig) -> None:
+    """Run the settings menu loop: browse categories, edit or reset settings."""
     groups = app.settings.groups()
     while True:
         clear_screen(style_config)
-        print(show_settings_categories(app, style_config))  # noqa: T201
+        print(_show_settings_categories(app, style_config))  # noqa: T201
         action: str = read_input()
         if action == Constants.KEY_PERCENT_QUIT:
             return
@@ -58,7 +61,7 @@ def settings_interface(app: NotesApp, style_config: StyleConfig) -> None:
                 app.add_notification("Settings reset to defaults")
         elif action.isdigit():
             if 0 <= int(action) < len(groups):
-                settings_group_interface(app, groups[int(action)], style_config)
+                _settings_group_interface(app, groups[int(action)], style_config)
             else:
                 pause("Wrong ID", style_config)
 
@@ -66,7 +69,7 @@ def settings_interface(app: NotesApp, style_config: StyleConfig) -> None:
             pause("Wrong action", style_config)
 
 
-def show_settings_group(
+def _show_settings_group(
     group_name: str,
     group_settings: list[Setting],
     style_config: StyleConfig,
@@ -91,20 +94,20 @@ def show_settings_group(
     return build_view(header, body, hints)
 
 
-def settings_group_interface(
+def _settings_group_interface(
     app: NotesApp, group: str, style_config: StyleConfig
 ) -> None:
     group_settings: list[Setting] = app.settings.settings_in_group(group)
     while True:
         clear_screen(style_config)
-        print(show_settings_group(group, group_settings, style_config))  # noqa: T201
+        print(_show_settings_group(group, group_settings, style_config))  # noqa: T201
         action: str = read_input()
         if action == Constants.KEY_PERCENT_QUIT:
             app.save_settings()
             return
         if action.isdigit():
             if 0 <= int(action) < len(group_settings):
-                edit_setting(app, group_settings[int(action)], style_config)
+                _edit_setting(app, group_settings[int(action)], style_config)
             else:
                 pause("Wrong ID", style_config)
 
@@ -112,7 +115,7 @@ def settings_group_interface(
             pause("Wrong action", style_config)
 
 
-def edit_setting(app: NotesApp, setting: Setting, style_config: StyleConfig) -> None:
+def _edit_setting(app: NotesApp, setting: Setting, style_config: StyleConfig) -> None:
     match setting.field_type:
         case Constants.FIELD_TYPE_BOOL:
             _edit_bool_setting(app, setting, style_config)

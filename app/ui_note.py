@@ -1,3 +1,5 @@
+"""Note viewing and editing interface of the CLI."""
+
 from __future__ import annotations
 
 from datetime import datetime, timedelta
@@ -22,7 +24,7 @@ if TYPE_CHECKING:
     from app.app import NotesApp
 
 
-def show_note(note: Note, app: NotesApp, style_config: StyleConfig) -> str:
+def _show_note(note: Note, app: NotesApp, style_config: StyleConfig) -> str:
     header: str = get_header(note.title, style_config, pink=has_easter_egg(note.text))
     body: str = ""
     if note.archived:
@@ -83,7 +85,7 @@ def _resolve_edit(style_config: StyleConfig) -> Constants.ACTION_TYPE:
     return Constants.ACTION_UNKNOWN
 
 
-def note_interface(note: Note, style_config: StyleConfig) -> Constants.ACTION_TYPE:
+def _note_interface(note: Note, style_config: StyleConfig) -> Constants.ACTION_TYPE:
     mode: str = read_input()
     if mode == Constants.KEY_QUIT:
         return Constants.ACTION_QUIT
@@ -157,6 +159,7 @@ def _unknown_action(style_config: StyleConfig) -> bool:
 
 
 def open_note(app: NotesApp, note: Note, style_config: StyleConfig) -> None:
+    """Open a note and dispatch user actions until exit."""
     handlers: dict[Constants.ACTION_TYPE, Callable[[], bool]] = {
         Constants.ACTION_QUIT: lambda: True,
         Constants.ACTION_ARCHIVE: lambda: _archive_note(app, note, style_config),
@@ -169,7 +172,7 @@ def open_note(app: NotesApp, note: Note, style_config: StyleConfig) -> None:
 
     while True:
         clear_screen(style_config)
-        print(show_note(note, app, style_config))  # noqa: T201
-        action: Constants.ACTION_TYPE = note_interface(note, style_config)
+        print(_show_note(note, app, style_config))  # noqa: T201
+        action: Constants.ACTION_TYPE = _note_interface(note, style_config)
         if handlers[action]():
             return

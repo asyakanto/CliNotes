@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from app.models import Note
 
 
-def merge_prefixes(tokens: list[str]) -> list[str]:
+def _merge_prefixes(tokens: list[str]) -> list[str]:
     """Merge tokens that follow a 'title:'/'text:' prefix into one token.
 
     Args:
@@ -33,7 +33,7 @@ def merge_prefixes(tokens: list[str]) -> list[str]:
     return merged_tokens
 
 
-def split_with_quotes(query: str) -> list[str]:
+def _split_with_quotes(query: str) -> list[str]:
     """Split a query into tokens, keeping quoted phrases together.
 
     Args:
@@ -73,8 +73,8 @@ def parse_query(query: str, prefixes: list[str]) -> list[tuple[str, str]]:
             ("text", ...) or ("all", ...).
 
     """
-    raw_parts: list[str] = split_with_quotes(query)
-    raw_parts = merge_prefixes(raw_parts)
+    raw_parts: list[str] = _split_with_quotes(query)
+    raw_parts = _merge_prefixes(raw_parts)
     filters: list[tuple[str, str]] = []
 
     for part in raw_parts:

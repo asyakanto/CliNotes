@@ -22,7 +22,7 @@ src = ["app"]
 [tool.ruff.lint]
 extend-select = [
     # БАЗА
-    "E", "W", "F", "I", "N",
+    "E", "W", "F", "I", "N", "D",
     # СОВРЕМЕННЫЙ PYTHON
     "UP", "FLY", "PTH", "FA",
     # КАЧЕСТВО
@@ -30,13 +30,12 @@ extend-select = [
     # БЕЗОПАСНОСТЬ И ОТЛАДКА
     "S", "T10", "T", "BLE", "DTZ",
     # СПЕЦИАЛИЗИРОВАННЫЕ
-    "ASYNC", "PT", "G", "LOG", "ISC", "TC", "YTT", "EXE", "INT", "PYI", "PGH",
+    "ASYNC", "PT", "TRY", "G", "LOG", "ISC", "TC", "YTT", "EXE", "INT", "PYI", "PGH",
     # ДОПОЛНИТЕЛЬНЫЕ
-    "ANN", "A", "ARG", "Q", "TID", "ERA", "COM", "RUF",
+    "ANN", "A", "ARG", "Q", "TID", "ERA", "FBT", "EM", "COM", "RUF",
     # ПРОИЗВОДИТЕЛЬНОСТЬ
     "PERF",
 ]
-# "D", "TRY", "FBT", "EM"
 
 # ignore
 ignore = ["EXE002", "D203", "D213", "COM812"]
@@ -75,3 +74,7 @@ packages = ["app"]
 
 [project.scripts]
 clinotes = "app.cli:main"
+
+[[tool.mypy.overrides]]
+module = "prompt_toolkit"
+ignore_missing_imports = true

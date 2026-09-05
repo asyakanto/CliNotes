@@ -1,8 +1,12 @@
+"""Centralized constants for the CliNotes application."""
+
 import logging
 from typing import Final, Literal
 
 
 class Constants:
+    """App-wide constants: colors, strings, keys, formats and settings."""
+
     # ── ANSI Colors ──────────────────────────
     ANSI_RESET: Final[str] = "\033[0m"
     ANSI_RED: Final[str] = "\033[31m"
@@ -75,6 +79,9 @@ class Constants:
     GROUP_CREATING: Final[str] = "creating a note"
     GROUP_INTERFACE: Final[str] = "interface"
     GROUP_SYSTEM: Final[str] = "system"
+
+    SETTINGS_KEY_NOT_FOUND: Final[str] = "Settings key '%s' not found in configuration"
+    SETTINGS_TYPE_MISMATCH: Final[str] = "Setting '%s' has type %s, expected %s"
 
     KEY_RESET_SETTINGS: Final[str] = "r"
 

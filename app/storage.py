@@ -1,3 +1,5 @@
+"""Persistent storage for notes and settings using JSON files."""
+
 from __future__ import annotations
 
 import logging
@@ -25,6 +27,7 @@ class Storage:
     TEMP_SETTINGS: Path
 
     def __init__(self) -> None:
+        """Initialize paths to the data directory and note/settings files."""
         self.root: Path = data_dir()
         self.root.mkdir(parents=True, exist_ok=True)
         self.NOTE_PATH = self.root / Constants.FILE_NOTES
@@ -103,6 +106,7 @@ class Storage:
         return result
 
     def load(self) -> list[NoteDict]:
+        """Load notes from disk, returning valid note dicts."""
         try:
             with Path.open(self.NOTE_PATH, encoding="utf-8") as file:
                 raw: Any = load(file)
@@ -125,6 +129,7 @@ class Storage:
         return notes
 
     def save(self, notes: list[Note]) -> str:
+        """Save notes to disk atomically and return an error message or empty string."""
         notes_serialized: list[dict[str, Any]] = [asdict(note) for note in notes]
         success_msg: str = f"Saved {len(notes)} notes"
         failed_msg: str = f"Failed to save notes. Details in {Constants.FILE_LOG}"
@@ -133,6 +138,7 @@ class Storage:
         )
 
     def load_settings(self) -> Settings:
+        """Load settings from disk, falling back to defaults."""
         try:
             with Path.open(self.SETTINGS_PATH, encoding="utf-8") as file:
                 setting_dict: dict[str, Any] = load(file)
@@ -147,6 +153,7 @@ class Storage:
             return Settings()
 
     def save_settings(self, settings: Settings) -> str:
+        """Save settings to disk atomically; return an error message or empty string."""
         return self._atomic_write(
             self.TEMP_SETTINGS,
             self.SETTINGS_PATH,
@@ -156,6 +163,11 @@ class Storage:
         )
 
     def update_notes_path(self, settings: Settings) -> bool:
+        """Point note paths at the configured directory.
+
+        Return whether the path was valid.
+
+        """
         str_path: str = settings.get_str_value(Constants.SETTING_NOTES_PATH)
         path: Path = self.root / str_path
         if path.is_dir():

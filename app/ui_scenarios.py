@@ -1,3 +1,5 @@
+"""User scenarios: creating and searching notes."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -14,6 +16,7 @@ if TYPE_CHECKING:
 
 
 def create_note_scenario(app: NotesApp, style_config: StyleConfig) -> None:
+    """Prompt for title and text, then create and open a note."""
     title: str = prompt_input(
         lowercase=False, hint="Note Name", style_config=style_config
     )
@@ -32,12 +35,13 @@ def create_note_scenario(app: NotesApp, style_config: StyleConfig) -> None:
 
 
 def search_scenario(app: NotesApp, style_config: StyleConfig) -> None:
+    """Prompt for a search query and let the user open results."""
     query: str = prompt_input(
         hint=f"Enter a search query ({Constants.KEY_SEARCH_HELP} for help)",
         style_config=style_config,
     )
     while query == Constants.KEY_SEARCH_HELP:
-        print(search_help(app.settings.active_tag_prefixes()))  # noqa: T201
+        print(_search_help(app.settings.active_tag_prefixes()))  # noqa: T201
         query = prompt_input(
             hint=f"Enter a search query ({Constants.KEY_SEARCH_HELP} for help)",
             style_config=style_config,
@@ -55,7 +59,11 @@ def search_scenario(app: NotesApp, style_config: StyleConfig) -> None:
                     f"Search results: {get_plural(len(results), 'note')}", style_config
                 )
             )
-            print(display_notes(get_visible_notes(results, True), style_config))  # noqa: T201
+            print(  # noqa: T201
+                display_notes(
+                    get_visible_notes(results, display_archive=True), style_config
+                )
+            )
 
             note_mode: str = prompt_input(
                 hint=f"Enter ID to open, {Constants.KEY_QUIT} to go back",
@@ -70,10 +78,10 @@ def search_scenario(app: NotesApp, style_config: StyleConfig) -> None:
             ):
                 found_note: Note | None = app.get_note(int(note_mode))
                 if found_note in results:
-                    open_note(app, found_note)
+                    open_note(app, found_note, style_config=style_config)
 
 
-def search_help(prefixes: list[str]) -> str:
+def _search_help(prefixes: list[str]) -> str:
     pairs: list[tuple[str, str]] = [
         ("word", "search in title & text"),
         *((f"{p}tag", "search by tag") for p in prefixes),
